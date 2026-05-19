@@ -1,12 +1,21 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { Search, Plus, MessageSquare, Bell } from "lucide-react";
 
 export default function Topbar() {
+  const pathname = usePathname();
+  const isOrders = pathname === "/orders";
   return (
-    <header className="h-24 px-8 flex items-center justify-between bg-[#fbfbfe] border-b border-gray-100">
+    <header className="h-24 px-8 flex items-center justify-between bg-[#ffffff] border-b border-gray-100">
       {/* Welcome Message */}
       <div className="flex flex-col">
-        <h1 className="text-2xl font-serif text-gray-900">Good morning, Priya</h1>
-        <p className="text-sm text-gray-500 mt-1">Here's what's weaving today at your atelier.</p>
+        <h1 className="text-2xl font-serif text-gray-900">
+          {isOrders ? "Orders" : "Good morning, Priya"}
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {isOrders ? "Track every saree from atelier to doorstep." : "Here's what's weaving today at your atelier."}
+        </p>
       </div>
 
       {/* Right Actions */}
@@ -47,7 +56,7 @@ export default function Topbar() {
             <span className="text-sm font-semibold text-gray-900">Priya Kapoor</span>
             <span className="text-[11px] text-gray-500">Store Admin</span>
           </div>
-          <div className="w-10 h-10 bg-[#a1005b] text-white rounded-full flex items-center justify-center font-serif text-lg">
+          <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg">
             P
           </div>
         </div>
