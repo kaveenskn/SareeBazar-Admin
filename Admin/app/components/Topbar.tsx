@@ -6,16 +6,25 @@ import { Search, Plus, MessageSquare, Bell } from "lucide-react";
 export default function Topbar() {
   const pathname = usePathname();
   const isOrders = pathname === "/orders";
+  const isSettings = pathname?.startsWith("/settings");
+
+  let title = "Good morning, Priya";
+  let subtitle = "Here's what's weaving today at your atelier.";
+
+  if (isOrders) {
+    title = "Orders";
+    subtitle = "Track every saree from atelier to doorstep.";
+  } else if (isSettings) {
+    title = "Settings";
+    subtitle = "Manage your store preferences and configurations.";
+  }
+
   return (
     <header className="h-24 px-8 flex items-center justify-between bg-[#ffffff] border-b border-gray-100">
       {/* Welcome Message */}
       <div className="flex flex-col">
-        <h1 className="text-2xl font-serif text-gray-900">
-          {isOrders ? "Orders" : "Good morning, Priya"}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {isOrders ? "Track every saree from atelier to doorstep." : "Here's what's weaving today at your atelier."}
-        </p>
+        <h1 className="text-2xl font-serif text-gray-900">{title}</h1>
+        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
       </div>
 
       {/* Right Actions */}

@@ -136,15 +136,15 @@ const DeliveryBadge = ({ status }: { status: string }) => {
 
 export default function OrdersPage() {
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto h-[calc(100vh-11rem)] min-h-[500px]">
       {/* Stats Row */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 shrink-0">
         {stats.map((stat, index) => (
           <div
             key={index}
             className="flex-1 bg-white border border-gray-100 rounded-3xl p-5 flex items-center gap-4 shadow-sm shadow-gray-100/50"
           >
-            <div className="w-12 h-12 rounded-full bg-[#fdf2f8] text-[#d93097] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-full bg-[#fdf2f8] text-[#a1005b] flex items-center justify-center shrink-0">
               <stat.icon size={22} />
             </div>
             <div className="flex flex-col">
@@ -160,7 +160,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white border border-gray-100 rounded-full p-2 flex items-center justify-between shadow-sm shadow-gray-100/50 mt-2">
+      <div className="bg-white border border-gray-100 rounded-full p-2 flex items-center justify-between shadow-sm shadow-gray-100/50 shrink-0">
         <div className="flex items-center pl-4 pr-2 w-[340px]">
           <Search size={18} className="text-gray-400 shrink-0" />
           <input
@@ -177,7 +177,7 @@ export default function OrdersPage() {
                 key={tab}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   tab === "All"
-                    ? "bg-[#d93097] text-white"
+                    ? "bg-[#a1005b] text-white"
                     : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                 }`}
               >
@@ -199,11 +199,11 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm shadow-gray-100/50 mt-2">
+      {/* Table (Scrollable Container) */}
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm shadow-gray-100/50 flex-1 overflow-y-auto pr-2 -mr-2">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[#fafafc] border-b border-gray-100">
+          <thead className="sticky top-0 bg-[#fafafc] z-10">
+            <tr className="border-b border-gray-100">
               <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Order
               </th>
@@ -239,7 +239,7 @@ export default function OrdersPage() {
                 }
               >
                 <td className="py-4 px-6 align-top">
-                  <span className="text-sm font-medium text-[#d93097]">
+                  <span className="text-sm font-medium text-[#a1005b]">
                     {order.id}
                   </span>
                 </td>
