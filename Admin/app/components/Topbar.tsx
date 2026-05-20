@@ -11,7 +11,7 @@ export default function Topbar() {
       {/* Welcome Message */}
       <div className="flex flex-col">
         <h1 className="text-2xl font-serif text-gray-900">
-          {isOrders ? "Orders" : "Good morning, Priya"}
+          {isOrders ? "Orders" : "Good morning, Ajay"}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           {isOrders ? "Track every saree from atelier to doorstep." : "Here's what's weaving today at your atelier."}
@@ -53,11 +53,11 @@ export default function Topbar() {
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-2">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-gray-900">Priya Kapoor</span>
+            <span className="text-sm font-semibold text-gray-900">Ajay Kapoor</span>
             <span className="text-[11px] text-gray-500">Store Admin</span>
           </div>
           <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg">
-            P
+            A
           </div>
         </div>
       </div>
