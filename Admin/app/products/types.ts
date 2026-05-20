@@ -1,0 +1,101 @@
+/* ─────────────────────────────────────────────
+ *  Admin Product Types
+ *  Extended from the SareeBazar collection types
+ *  with additional admin-specific fields.
+ * ───────────────────────────────────────────── */
+
+export interface ColorVariant {
+  name: string;
+  hex: string;
+  image: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  image: string;
+  images?: string[];
+  video?: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviews: number;
+  category: string;
+  badge?: string;
+  isWishlisted?: boolean;
+  description?: string;
+  fabric?: string;
+  color?: string;
+  colorVariants?: ColorVariant[];
+  inStock?: boolean;
+  createdAt?: string;
+  /* ── Admin-specific fields ── */
+  sku?: string;
+  stock?: number;
+  sizes?: string[];
+  discountPercent?: number;
+  isFeatured?: boolean;
+  isLatest?: boolean;
+  isTrending?: boolean;
+  specifications?: Record<string, string>;
+  tags?: string[];
+  weight?: string;
+  dimensions?: string;
+}
+
+export type ViewMode = "table" | "grid";
+
+export type SortField = "name" | "price" | "stock" | "createdAt" | "rating";
+export type SortDirection = "asc" | "desc";
+
+export interface ProductFilters {
+  search: string;
+  category: string;
+  stockStatus: "all" | "inStock" | "outOfStock" | "lowStock";
+  badge: string;
+  sortField: SortField;
+  sortDirection: SortDirection;
+}
+
+export const CATEGORIES = [
+  "Silk Sarees",
+  "Cotton Sarees",
+  "Handloom",
+  "Bridal",
+  "Daily Wear",
+  "Georgette",
+  "Designer",
+  "Party Wear",
+] as const;
+
+export const FABRICS = [
+  "Pure Silk",
+  "Banarasi Silk",
+  "Tussar Silk",
+  "Cotton",
+  "Chanderi Cotton",
+  "Georgette",
+  "Chiffon",
+  "Organza",
+  "Linen",
+  "Crepe",
+] as const;
+
+export const SIZES = [
+  "Free Size",
+  "5.5m",
+  "6m",
+  "6.3m",
+  "6.5m",
+  "8m",
+  "9m",
+] as const;
+
+export const BADGES = [
+  "New",
+  "Best Seller",
+  "Trending",
+  "Limited Edition",
+  "Sale",
+] as const;

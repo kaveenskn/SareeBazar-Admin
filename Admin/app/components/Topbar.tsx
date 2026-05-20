@@ -5,19 +5,15 @@ import { Search, Plus, MessageSquare, Bell } from "lucide-react";
 
 export default function Topbar() {
   const pathname = usePathname();
-  const isOrders = pathname === "/orders";
-  const isSettings = pathname?.startsWith("/settings");
 
-  let title = "Good morning, Priya";
-  let subtitle = "Here's what's weaving today at your atelier.";
+  const getPageInfo = () => {
+    if (pathname === "/orders") return { title: "Orders", subtitle: "Track every saree from atelier to doorstep." };
+    if (pathname?.startsWith("/products")) return { title: "Products", subtitle: "Manage your saree catalog and inventory." };
+    if (pathname?.startsWith("/settings")) return { title: "Settings", subtitle: "Manage your store preferences and configurations." };
+    return { title: "Good morning, Ajay", subtitle: "Here's what's weaving today at your atelier." };
+  };
 
-  if (isOrders) {
-    title = "Orders";
-    subtitle = "Track every saree from atelier to doorstep.";
-  } else if (isSettings) {
-    title = "Settings";
-    subtitle = "Manage your store preferences and configurations.";
-  }
+  const { title, subtitle } = getPageInfo();
 
   return (
     <header className="h-24 px-8 flex items-center justify-between bg-[#ffffff] border-b border-gray-100">
@@ -62,11 +58,11 @@ export default function Topbar() {
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-2">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-gray-900">Priya Kapoor</span>
+            <span className="text-sm font-semibold text-gray-900">Ajay Kapoor</span>
             <span className="text-[11px] text-gray-500">Store Admin</span>
           </div>
           <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg">
-            P
+            A
           </div>
         </div>
       </div>
