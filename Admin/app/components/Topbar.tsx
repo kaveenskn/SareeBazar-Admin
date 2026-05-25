@@ -7,10 +7,30 @@ export default function Topbar() {
   const pathname = usePathname();
 
   const getPageInfo = () => {
-    if (pathname === "/orders") return { title: "Orders", subtitle: "Track every saree from atelier to doorstep." };
-    if (pathname?.startsWith("/products")) return { title: "Products", subtitle: "Manage your saree catalog and inventory." };
-    if (pathname?.startsWith("/settings")) return { title: "Settings", subtitle: "Manage your store preferences and configurations." };
-    return { title: "Good morning, Ajay", subtitle: "Here's what's weaving today at your atelier." };
+    if (pathname === "/orders")
+      return {
+        title: "Orders",
+        subtitle: "Track every saree from atelier to doorstep.",
+      };
+    if (pathname?.startsWith("/products"))
+      return {
+        title: "Products",
+        subtitle: "Manage your saree catalog and inventory.",
+      };
+    if (pathname?.startsWith("/reviews"))
+      return {
+        title: "Reviews & Feedback",
+        subtitle: "Curate the voice of your customers.",
+      };
+    if (pathname?.startsWith("/settings"))
+      return {
+        title: "Settings",
+        subtitle: "Manage your store preferences and configurations.",
+      };
+    return {
+      title: "Good morning, Ajay",
+      subtitle: "Here's what's weaving today at your atelier.",
+    };
   };
 
   const { title, subtitle } = getPageInfo();
@@ -44,11 +64,11 @@ export default function Topbar() {
             <Plus size={18} />
             New Product
           </button>
-          
+
           <button className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors">
             <MessageSquare size={18} />
           </button>
-          
+
           <button className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors relative">
             <Bell size={18} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-[#a1005b] rounded-full border-2 border-white"></span>
@@ -58,7 +78,9 @@ export default function Topbar() {
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-2">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-gray-900">Ajay Kapoor</span>
+            <span className="text-sm font-semibold text-gray-900">
+              Ajay Kapoor
+            </span>
             <span className="text-[11px] text-gray-500">Store Admin</span>
           </div>
           <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg">
