@@ -11,19 +11,18 @@ const app = express();
 
 // Allow both user app (3000) and admin panel (3001)
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  process.env.CLIENT_URL,
-].filter(Boolean);
+  process.env.CLIENT_URL || "http://localhost:3000",
+  process.env.ADMIN_URL || "http://localhost:3001",
+];
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for demo
     }
-    return callback(null, true); // Allow all in dev
   },
   credentials: true,
 }));
