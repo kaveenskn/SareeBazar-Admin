@@ -92,6 +92,7 @@ const orders = [
     date: "2 days ago",
     payment: "Refunded",
     delivery: "Cancelled",
+    cancelReason: "Found a better price elsewhere.",
   },
 ];
 
@@ -277,7 +278,14 @@ export default function OrdersPage() {
                   <PaymentBadge status={order.payment} />
                 </td>
                 <td className="py-4 px-6 align-top">
-                  <DeliveryBadge status={order.delivery} />
+                  <div className="flex flex-col gap-1 items-start">
+                    <DeliveryBadge status={order.delivery} />
+                    {order.cancelReason && (
+                      <span className="text-[11px] text-red-500 italic max-w-[120px] leading-tight">
+                        Reason: {order.cancelReason}
+                      </span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
