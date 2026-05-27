@@ -57,6 +57,44 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
+// ─── GET /api/orders/admin/all ─── (admin: all orders, no auth for demo)
+router.get("/admin/all", async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+    res.json({ orders });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch orders", error: err.message });
+  }
+});
+
+// ─── PATCH /api/orders/admin/:orderId/status ─── (admin: update order status)
+router.patch("/admin/:orderId/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+    }
+
+    const order = await Order.findOneAndUpdate(
+      { orderId: req.params.orderId },
+      { status },
+      { new: true }
+    ).populate("user", "name email");
+
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json({ order });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update order status", error: err.message });
+  }
+});
+
 // ─── GET /api/orders ─── (user's orders)
 router.get("/", protect, async (req, res) => {
   try {
