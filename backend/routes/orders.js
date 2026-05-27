@@ -116,7 +116,7 @@ router.patch("/:orderId/payment", protect, async (req, res) => {
 router.patch("/:orderId/cancel", protect, async (req, res) => {
   try {
     const { reason } = req.body;
-    
+
     if (!reason || !reason.trim()) {
       return res.status(400).json({ message: "Cancellation reason is required" });
     }
