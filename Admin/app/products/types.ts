@@ -12,6 +12,7 @@ export interface ColorVariant {
 
 export interface Product {
   id: number;
+  _id?: string;
   name: string;
   slug: string;
   image: string;

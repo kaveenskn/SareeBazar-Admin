@@ -135,17 +135,12 @@ export default function ProductViewModal({
 
             {/* Right: Details */}
             <div className="space-y-5">
-              {/* Title & SKU */}
+              {/* Title */}
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 leading-tight">
                   {product.name}
                 </h3>
                 <div className="flex items-center gap-3 mt-2">
-                  {product.sku && (
-                    <span className="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
-                      {product.sku}
-                    </span>
-                  )}
                   <span className="text-xs text-gray-400">
                     {product.category}
                   </span>

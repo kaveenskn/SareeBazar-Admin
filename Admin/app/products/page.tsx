@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Search,
   Filter,
@@ -22,17 +22,58 @@ import {
   Sparkles,
   Clock,
   Box,
+  Loader2,
 } from "lucide-react";
 import { Product, ViewMode, ProductFilters as Filters, CATEGORIES } from "./types";
-import { mockProducts } from "./data";
 import ProductFormModal from "./components/ProductFormModal";
 import ProductViewModal from "./components/ProductViewModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
+import { fetchProducts, createProduct, updateProduct, deleteProduct, ApiProduct } from "./api";
 
 const ITEMS_PER_PAGE = 8;
 
+/* ── Map API response to frontend Product type ── */
+function mapApiToProduct(api: ApiProduct): Product {
+  return {
+    id: api._id as unknown as number, // We use _id as string identifier
+    _id: api._id,
+    name: api.name,
+    slug: api.slug,
+    image: api.image,
+    images: api.images,
+    video: api.video,
+    price: api.price,
+    originalPrice: api.originalPrice ?? undefined,
+    rating: api.rating,
+    reviews: api.reviews,
+    category: api.category,
+    badge: api.badge || undefined,
+    description: api.description,
+    fabric: api.fabric,
+    color: api.color,
+    colorVariants: api.colorVariants,
+    inStock: api.inStock,
+    stock: api.stock,
+    sizes: api.sizes,
+    discountPercent: api.discountPercent ?? undefined,
+    isFeatured: api.isFeatured,
+    isLatest: api.isLatest,
+    isTrending: api.isTrending,
+    specifications: api.specifications
+      ? Object.fromEntries(Object.entries(api.specifications))
+      : {},
+    tags: api.tags,
+    weight: api.weight,
+    dimensions: api.dimensions,
+    createdAt: api.createdAt,
+  };
+}
+
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -50,6 +91,26 @@ export default function ProductsPage() {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [activeFilterTab, setActiveFilterTab] = useState("All");
+
+  /* ── Load products from backend ── */
+  const loadProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const apiProducts = await fetchProducts();
+      setProducts(apiProducts.map(mapApiToProduct));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load products";
+      setError(message);
+      console.error("Failed to load products:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   // Stats
   const stats = useMemo(() => {
@@ -82,7 +143,6 @@ export default function ProductsPage() {
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(s) ||
-          p.sku?.toLowerCase().includes(s) ||
           p.category.toLowerCase().includes(s) ||
           p.fabric?.toLowerCase().includes(s)
       );
@@ -121,26 +181,62 @@ export default function ProductsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Actions
-  const handleSave = (product: Product) => {
-    if (editingProduct) {
-      setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
-    } else {
-      setProducts((prev) => [...prev, product]);
+  // Actions — connected to backend
+  const handleSave = async (product: Product) => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, _id, ...productData } = product as Product & { _id?: string };
+
+      if (editingProduct && (editingProduct as Product & { _id?: string })._id) {
+        // Update existing product
+        await updateProduct(
+          (editingProduct as Product & { _id?: string })._id!,
+          productData as unknown as Record<string, unknown>
+        );
+      } else {
+        // Create new product
+        await createProduct(productData as unknown as Record<string, unknown>);
+      }
+
+      // Reload products from backend
+      await loadProducts();
+      setShowFormModal(false);
+      setEditingProduct(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save product";
+      setError(message);
+      console.error("Failed to save product:", err);
+    } finally {
+      setSaving(false);
     }
-    setShowFormModal(false);
-    setEditingProduct(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingProduct) return;
-    setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
-    setDeletingProduct(null);
+    try {
+      setSaving(true);
+      setError(null);
+      const _id = (deletingProduct as Product & { _id?: string })._id;
+      if (_id) {
+        await deleteProduct(_id);
+      }
+      await loadProducts();
+      setDeletingProduct(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete product";
+      setError(message);
+      console.error("Failed to delete product:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openAdd = () => { setEditingProduct(null); setShowFormModal(true); };
   const openEdit = (p: Product) => { setEditingProduct(p); setShowFormModal(true); };
-  const nextId = Math.max(...products.map((p) => p.id), 0) + 1;
+  const nextId = Math.max(...products.map((p) => (typeof p.id === "number" ? p.id : 0)), 0) + 1;
 
   const categoryTabs = ["All", ...new Set(products.map((p) => p.category))];
 
@@ -153,6 +249,14 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+          <span className="text-sm text-red-600">{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-sm font-medium">Dismiss</button>
+        </div>
+      )}
+
       {/* Stats Row */}
       <div className="flex gap-4">
         {stats.map((stat, i) => (
@@ -211,8 +315,16 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={32} className="animate-spin text-[#d93097]" />
+          <span className="ml-3 text-gray-500">Loading products...</span>
+        </div>
+      )}
+
       {/* Table View */}
-      {viewMode === "table" && (
+      {!loading && viewMode === "table" && (
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm shadow-gray-100/50 mt-2">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -228,7 +340,7 @@ export default function ProductsPage() {
             </thead>
             <tbody>
               {paginatedProducts.map((product, idx) => (
-                <tr key={product.id} className={`hover:bg-gray-50/50 transition-colors ${idx !== paginatedProducts.length - 1 ? "border-b border-gray-50" : ""}`}>
+                <tr key={(product as Product & { _id?: string })._id || product.id} className={`hover:bg-gray-50/50 transition-colors ${idx !== paginatedProducts.length - 1 ? "border-b border-gray-50" : ""}`}>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden shrink-0 border border-gray-100">
@@ -240,7 +352,6 @@ export default function ProductsPage() {
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{product.name}</span>
-                        <span className="text-xs text-gray-400 font-mono">{product.sku || "—"}</span>
                       </div>
                     </div>
                   </td>
@@ -305,10 +416,10 @@ export default function ProductsPage() {
       )}
 
       {/* Grid View */}
-      {viewMode === "grid" && (
+      {!loading && viewMode === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
           {paginatedProducts.map((product) => (
-            <div key={product.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm shadow-gray-100/50 group hover:shadow-md transition-shadow">
+            <div key={(product as Product & { _id?: string })._id || product.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm shadow-gray-100/50 group hover:shadow-md transition-shadow">
               <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
                 {product.image ? (
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
@@ -326,7 +437,6 @@ export default function ProductsPage() {
               </div>
               <div className="p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-400 font-mono">{product.sku || "—"}</span>
                   {stockBadge(product)}
                 </div>
                 <h3 className="text-sm font-semibold text-gray-900 truncate mt-1">{product.name}</h3>
@@ -384,6 +494,7 @@ export default function ProductsPage() {
           onClose={() => { setShowFormModal(false); setEditingProduct(null); }}
           onSave={handleSave}
           nextId={nextId}
+          saving={saving}
         />
       )}
       {viewingProduct && (
