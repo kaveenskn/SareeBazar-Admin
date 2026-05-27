@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Upload, Plus, Trash2, ChevronDown, ImageIcon, Film } from "lucide-react";
 import { Product, CATEGORIES, FABRICS, SIZES, BADGES } from "../types";
+import { uploadFiles } from "../../../utils/uploadthing";
 
 interface ProductFormModalProps {
   product?: Product | null;
@@ -138,6 +139,9 @@ export default function ProductFormModal({
     Array(4).fill({ hex: "#000000", name: "" })
   );
 
+  const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
+  const [isUploading, setIsUploading] = useState(false);
+
   const updateSlotColor = (index: number, key: "hex" | "name", value: string) => {
     setSlotColors((prev) => {
       const next = [...prev];
@@ -168,14 +172,73 @@ export default function ProductFormModal({
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
+    
+    setIsUploading(true);
+    let finalForm = { ...form };
+
+    try {
+      const imageFiles: File[] = [];
+      const imageKeys: string[] = [];
+      const videoFiles: File[] = [];
+      const videoKeys: string[] = [];
+
+      Object.entries(filesToUpload).forEach(([key, file]) => {
+         if (key === "video") {
+           videoFiles.push(file); videoKeys.push(key);
+         } else {
+           imageFiles.push(file); imageKeys.push(key);
+         }
+      });
+
+      if (imageFiles.length > 0) {
+         const res = await uploadFiles("imageUploader", { files: imageFiles });
+         res.forEach((r, idx) => {
+           const key = imageKeys[idx];
+           if (key === "image") finalForm.image = r.url;
+           else if (key.startsWith("images[")) {
+              const arrIdx = parseInt(key.match(/\[(\d+)\]/)?.[1] || "0");
+              if (!finalForm.images) finalForm.images = [];
+              finalForm.images[arrIdx] = r.url;
+           }
+         });
+      }
+
+      if (videoFiles.length > 0) {
+         const res = await uploadFiles("videoUploader", { files: videoFiles });
+         res.forEach((r) => {
+           finalForm.video = r.url;
+         });
+      }
+    } catch (error) {
+       console.error("Upload failed", error);
+       alert("Failed to upload files. Please try again.");
+       setIsUploading(false);
+       return;
+    }
+
+    finalForm.colorVariants = slotColors
+        .map((c, i) => {
+          let imageUrl = "";
+          if (i === 0) imageUrl = finalForm.image;
+          else if (i <= 3) imageUrl = finalForm.images?.[i-1] || "";
+          return { name: c.name, hex: c.hex, image: imageUrl };
+        })
+        .filter(c => c.image && c.image.trim() !== "");
+
+    if (finalForm.colorVariants.length > 0) {
+       finalForm.color = finalForm.colorVariants[0].name;
+    }
+
     const saved: Product = {
-      ...form,
+      ...finalForm,
       id: product?.id ?? nextId,
-      slug: generateSlug(form.name),
-      inStock: (form.stock ?? 0) > 0,
+      slug: generateSlug(finalForm.name),
+      inStock: (finalForm.stock ?? 0) > 0,
     };
+    
+    setIsUploading(false);
     onSave(saved);
   };
 
@@ -351,7 +414,13 @@ export default function ProductFormModal({
                           <span className="text-xs text-gray-400 font-medium z-10">Main Image *</span>
                         </>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) updateField("image", URL.createObjectURL(e.target.files[0])); }} />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          updateField("image", URL.createObjectURL(file));
+                          setFilesToUpload(prev => ({ ...prev, image: file }));
+                        } 
+                      }} />
                     </label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
@@ -360,7 +429,10 @@ export default function ProductFormModal({
                           <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[0].hex} onChange={(e) => updateSlotColor(0, "hex", e.target.value)} />
                         </div>
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => updateField("image", "")}>
+                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => {
+                        updateField("image", "");
+                        setFilesToUpload(prev => { const next = {...prev}; delete next.image; return next; });
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -382,7 +454,15 @@ export default function ProductFormModal({
                           <span className="text-xs text-gray-400 font-medium z-10">Image 2 *</span>
                         </>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { const newImages = [...(form.images || [])]; newImages[0] = URL.createObjectURL(e.target.files[0]); updateField("images", newImages); } }} />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const newImages = [...(form.images || [])]; 
+                          newImages[0] = URL.createObjectURL(file); 
+                          updateField("images", newImages); 
+                          setFilesToUpload(prev => ({ ...prev, "images[0]": file }));
+                        } 
+                      }} />
                     </label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
@@ -391,7 +471,12 @@ export default function ProductFormModal({
                           <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[1].hex} onChange={(e) => updateSlotColor(1, "hex", e.target.value)} />
                         </div>
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { const newImages = [...(form.images || [])]; newImages[0] = ""; updateField("images", newImages); }}>
+                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
+                        const newImages = [...(form.images || [])]; 
+                        newImages[0] = ""; 
+                        updateField("images", newImages); 
+                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[0]"]; return next; });
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -413,7 +498,15 @@ export default function ProductFormModal({
                           <span className="text-xs text-gray-400 font-medium z-10">Image 3</span>
                         </>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { const newImages = [...(form.images || [])]; newImages[1] = URL.createObjectURL(e.target.files[0]); updateField("images", newImages); } }} />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const newImages = [...(form.images || [])]; 
+                          newImages[1] = URL.createObjectURL(file); 
+                          updateField("images", newImages); 
+                          setFilesToUpload(prev => ({ ...prev, "images[1]": file }));
+                        } 
+                      }} />
                     </label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
@@ -422,7 +515,12 @@ export default function ProductFormModal({
                           <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[2].hex} onChange={(e) => updateSlotColor(2, "hex", e.target.value)} />
                         </div>
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { const newImages = [...(form.images || [])]; newImages[1] = ""; updateField("images", newImages); }}>
+                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
+                        const newImages = [...(form.images || [])]; 
+                        newImages[1] = ""; 
+                        updateField("images", newImages); 
+                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[1]"]; return next; });
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -444,7 +542,15 @@ export default function ProductFormModal({
                           <span className="text-xs text-gray-400 font-medium z-10">Image 4</span>
                         </>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { const newImages = [...(form.images || [])]; newImages[2] = URL.createObjectURL(e.target.files[0]); updateField("images", newImages); } }} />
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const newImages = [...(form.images || [])]; 
+                          newImages[2] = URL.createObjectURL(file); 
+                          updateField("images", newImages);
+                          setFilesToUpload(prev => ({ ...prev, "images[2]": file }));
+                        } 
+                      }} />
                     </label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
@@ -453,7 +559,12 @@ export default function ProductFormModal({
                           <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[3].hex} onChange={(e) => updateSlotColor(3, "hex", e.target.value)} />
                         </div>
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { const newImages = [...(form.images || [])]; newImages[2] = ""; updateField("images", newImages); }}>
+                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
+                        const newImages = [...(form.images || [])]; 
+                        newImages[2] = ""; 
+                        updateField("images", newImages); 
+                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[2]"]; return next; });
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -479,10 +590,19 @@ export default function ProductFormModal({
                           <span className="text-xs text-gray-400 font-medium z-10">Video</span>
                         </>
                       )}
-                      <input type="file" accept="video/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) updateField("video", URL.createObjectURL(e.target.files[0])); }} />
+                      <input type="file" accept="video/*" className="hidden" onChange={(e) => { 
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          updateField("video", URL.createObjectURL(file)); 
+                          setFilesToUpload(prev => ({ ...prev, video: file }));
+                        }
+                      }} />
                     </label>
                     <div className="flex justify-end mt-1">
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md" onClick={() => updateField("video", "")}>
+                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md" onClick={() => {
+                        updateField("video", "");
+                        setFilesToUpload(prev => { const next = {...prev}; delete next.video; return next; });
+                      }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -539,8 +659,8 @@ export default function ProductFormModal({
           <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
             Cancel
           </button>
-          <button onClick={handleSubmit} disabled={saving} className={`px-6 py-2.5 bg-[#a1005b] text-white rounded-xl text-sm font-medium hover:bg-[#800048] transition-colors shadow-sm shadow-[#a1005b]/20 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}>
-            {saving ? "Saving..." : isEditing ? "Update Product" : "Create Product"}
+          <button onClick={handleSubmit} disabled={saving || isUploading} className={`px-6 py-2.5 bg-[#a1005b] text-white rounded-xl text-sm font-medium hover:bg-[#800048] transition-colors shadow-sm shadow-[#a1005b]/20 ${(saving || isUploading) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+            {saving ? "Saving..." : isUploading ? "Uploading Media..." : isEditing ? "Update Product" : "Create Product"}
           </button>
         </div>
       </div>

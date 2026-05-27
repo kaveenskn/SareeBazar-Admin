@@ -42,7 +42,7 @@ export function RevenueChart() {
           />
           <Tooltip
             contentStyle={tooltipStyle}
-            formatter={(v: number) => [`₹${(v / 100000).toFixed(1)}L`, "Revenue"]}
+            formatter={(v: any) => [`₹${(Number(v) / 100000).toFixed(1)}L`, "Revenue"]}
           />
           <Area
             type="monotone"
@@ -78,7 +78,7 @@ export function CategoryChart() {
           </Pie>
           <Tooltip
             contentStyle={tooltipStyle}
-            formatter={(v: number) => [`${v}%`, "Share"]}
+            formatter={(v: any) => [`${Number(v)}%`, "Share"]}
           />
         </PieChart>
       </ResponsiveContainer>
