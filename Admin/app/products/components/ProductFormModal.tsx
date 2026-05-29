@@ -15,6 +15,7 @@ interface ProductFormModalProps {
 
 const emptyProduct: Omit<Product, "id"> = {
   name: "",
+  slug: "",
   image: "",
   images: [],
   price: 0,
@@ -196,11 +197,12 @@ export default function ProductFormModal({
          const res = await uploadFiles("imageUploader", { files: imageFiles });
          res.forEach((r, idx) => {
            const key = imageKeys[idx];
-           if (key === "image") finalForm.image = r.url;
+           const uploadedUrl = (r as any).ufsUrl || r.url;
+           if (key === "image") finalForm.image = uploadedUrl;
            else if (key.startsWith("images[")) {
               const arrIdx = parseInt(key.match(/\[(\d+)\]/)?.[1] || "0");
               if (!finalForm.images) finalForm.images = [];
-              finalForm.images[arrIdx] = r.url;
+              finalForm.images[arrIdx] = uploadedUrl;
            }
          });
       }
@@ -208,7 +210,7 @@ export default function ProductFormModal({
       if (videoFiles.length > 0) {
          const res = await uploadFiles("videoUploader", { files: videoFiles });
          res.forEach((r) => {
-           finalForm.video = r.url;
+           finalForm.video = (r as any).ufsUrl || r.url;
          });
       }
     } catch (error) {
@@ -223,7 +225,9 @@ export default function ProductFormModal({
           let imageUrl = "";
           if (i === 0) imageUrl = finalForm.image;
           else if (i <= 3) imageUrl = finalForm.images?.[i-1] || "";
-          return { name: c.name, hex: c.hex, image: imageUrl };
+          
+          const finalColorName = c.name || getNearestColorName(c.hex) || "Default";
+          return { name: finalColorName, hex: c.hex, image: imageUrl };
         })
         .filter(c => c.image && c.image.trim() !== "");
 

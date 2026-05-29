@@ -35,6 +35,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/user", require("./routes/user"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/products", require("./routes/products"));
+app.use("/api/virtual-tryon", require("./routes/virtualTryon"));
 
 app.get("/", (req, res) => res.json({ message: "SareeBazar API running" }));
 

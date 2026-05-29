@@ -3,7 +3,7 @@
  *  Handles all communication with the backend
  * ───────────────────────────────────────────── */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 
 export interface ApiProduct {
   _id: string;
@@ -59,7 +59,8 @@ export async function createProduct(data: Record<string, unknown>): Promise<ApiP
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "Unknown error" }));
-    throw new Error(err.message || "Failed to create product");
+    const errorMessage = err.error ? `${err.message}: ${err.error}` : err.message;
+    throw new Error(errorMessage || "Failed to create product");
   }
   return res.json();
 }
@@ -72,7 +73,8 @@ export async function updateProduct(id: string, data: Record<string, unknown>): 
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "Unknown error" }));
-    throw new Error(err.message || "Failed to update product");
+    const errorMessage = err.error ? `${err.message}: ${err.error}` : err.message;
+    throw new Error(errorMessage || "Failed to update product");
   }
   return res.json();
 }
