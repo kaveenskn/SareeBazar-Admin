@@ -22,6 +22,11 @@ export default function Topbar() {
         title: "Reviews & Feedback",
         subtitle: "Curate the voice of your customers.",
       };
+    if (pathname?.startsWith("/customers"))
+      return {
+        title: "Customers",
+        subtitle: "The women who wear your craft.",
+      };
     if (pathname?.startsWith("/settings"))
       return {
         title: "Settings",
