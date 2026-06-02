@@ -155,7 +155,18 @@ export default function ProductFormModal({
   };
 
   useEffect(() => {
-    if (product) setForm({ ...product });
+    if (product) {
+      setForm({ ...product });
+      if (product.colorVariants && product.colorVariants.length > 0) {
+        const newSlots = Array(4).fill({ hex: "#000000", name: "" });
+        product.colorVariants.forEach((c, i) => {
+          if (i < 4) {
+            newSlots[i] = { hex: c.hex, name: c.name };
+          }
+        });
+        setSlotColors(newSlots);
+      }
+    }
   }, [product]);
 
   const updateField = <K extends keyof Omit<Product, "id">>(key: K, value: Omit<Product, "id">[K]) => {
@@ -643,16 +654,15 @@ export default function ProductFormModal({
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Rating</label>
-                  <input type="number" className={inputClass()} placeholder="0-5" min="0" max="5" step="0.5" value={form.rating || ""} onChange={(e) => updateField("rating", Number(e.target.value))} />
+              {!isEditing && (
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className={labelClass}>Initial Rating</label>
+                    <input type="number" className={inputClass()} placeholder="0-5" min="0" max="5" step="0.5" value={form.rating || ""} onChange={(e) => updateField("rating", Number(e.target.value))} />
+                  </div>
                 </div>
-                <div>
-                  <label className={labelClass}>Reviews Count</label>
-                  <input type="number" className={inputClass()} placeholder="0" value={form.reviews || ""} onChange={(e) => updateField("reviews", Number(e.target.value))} />
-                </div>
-              </div>
+              )}
+
             </>
           )}
 
