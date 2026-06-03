@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const sharp = require("sharp");
 const { GoogleGenAI } = require("@google/genai");
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -52,6 +53,20 @@ function parseDataUri(dataUri) {
   return { mimeType: "image/jpeg", data: dataUri };
 }
 
+// ── Helper: compress a base64 image to max 512×512 JPEG q60 ──────────
+async function compressImage(base64Data) {
+  const inputBuffer = Buffer.from(base64Data, "base64");
+  const outputBuffer = await sharp(inputBuffer)
+    .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 60 })
+    .toBuffer();
+  const compressedBase64 = outputBuffer.toString("base64");
+  const originalKB = (inputBuffer.length / 1024).toFixed(0);
+  const compressedKB = (outputBuffer.length / 1024).toFixed(0);
+  console.log(`📦 Image compressed: ${originalKB}KB → ${compressedKB}KB`);
+  return { mimeType: "image/jpeg", data: compressedBase64 };
+}
+
 // ── POST /api/virtual-tryon/generate ─────────────────────────────────
 router.post("/generate", async (req, res) => {
   try {
@@ -65,29 +80,39 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    // Check API key
+    // Check credentials — supports both AI Studio (API key) and Vertex AI (service account)
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const gcpProject = process.env.GCP_PROJECT_ID;
+    const gcpLocation = process.env.GCP_LOCATION || "us-central1";
+
+    if (!apiKey && !gcpProject) {
       return res.status(500).json({
         success: false,
         message:
-          "GEMINI_API_KEY is not configured. Add it to the backend .env file.",
+          "Gemini is not configured. Set GEMINI_API_KEY (AI Studio) or GCP_PROJECT_ID (Vertex AI) in .env.",
       });
     }
 
     // Parse images
-    const person = parseDataUri(personImage);
-    const saree = parseDataUri(sareeImage);
+    const personRaw = parseDataUri(personImage);
+    const sareeRaw = parseDataUri(sareeImage);
 
-    // Initialise Gemini client
-    const ai = new GoogleGenAI({ apiKey });
+    // Compress images to max 512×512 JPEG q60 to stay within token limits
+    console.log("📦 Compressing images before sending to Gemini...");
+    const person = await compressImage(personRaw.data);
+    const saree = await compressImage(sareeRaw.data);
+
+    // Initialise Gemini client (AI Studio key OR Vertex AI ADC)
+    const ai = apiKey
+      ? new GoogleGenAI({ apiKey })
+      : new GoogleGenAI({ vertexai: true, project: gcpProject, location: gcpLocation });
 
     console.log("🥻 Virtual Try-On: Sending request to Gemini...");
     const startTime = Date.now();
 
     // Build the multimodal request
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image",
+      model: "gemini-2.5-flash-image",
       contents: [
         {
           role: "user",
@@ -174,11 +199,13 @@ router.post("/generate", async (req, res) => {
 
 // ── GET /api/virtual-tryon/status  (health check) ────────────────────
 router.get("/status", (req, res) => {
-  const hasKey = !!process.env.GEMINI_API_KEY;
+  const hasApiKey = !!process.env.GEMINI_API_KEY;
+  const hasVertexAI = !!process.env.GCP_PROJECT_ID;
+  const isReady = hasApiKey || hasVertexAI;
   res.json({
     service: "virtual-tryon",
-    status: hasKey ? "ready" : "missing_api_key",
-    hasApiKey: hasKey,
+    status: isReady ? "ready" : "missing_credentials",
+    authMethod: hasApiKey ? "api_key" : hasVertexAI ? "vertex_ai" : "none",
   });
 });
 

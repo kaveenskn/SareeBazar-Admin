@@ -85,7 +85,7 @@ router.patch("/admin/:orderId/status", async (req, res) => {
     const order = await Order.findOneAndUpdate(
       { orderId: req.params.orderId },
       { status },
-      { new: true }
+      { returnDocument: "after" }
     ).populate("user", "name email");
 
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -171,7 +171,7 @@ router.patch("/:orderId/payment", protect, async (req, res) => {
     const order = await Order.findOneAndUpdate(
       { orderId: req.params.orderId, user: req.userId },
       update,
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!order) return res.status(404).json({ message: "Order not found" });

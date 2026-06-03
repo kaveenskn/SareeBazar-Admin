@@ -147,7 +147,7 @@ router.put("/:id", async (req, res) => {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!product) {
