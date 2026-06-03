@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Store,
   Palette,
@@ -11,6 +11,9 @@ import {
   Upload,
   Sparkles,
   Plus,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 const navigationItems = [
@@ -29,9 +32,132 @@ const initialPaymentGateways = [
   { name: "Cash on Delivery", description: "Eligible pincodes only", active: true },
 ];
 
+interface ShopInfo {
+  storeName: string;
+  supportEmail: string;
+  phone: string;
+  address: string;
+  openingHours: string;
+  tagline: string;
+  description: string;
+  socialLinks: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+    youtube: string;
+  };
+}
+
+const defaultShopInfo: ShopInfo = {
+  storeName: "",
+  supportEmail: "",
+  phone: "",
+  address: "",
+  openingHours: "",
+  tagline: "",
+  description: "",
+  socialLinks: {
+    instagram: "",
+    facebook: "",
+    twitter: "",
+    youtube: "",
+  },
+};
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("Payment");
+  const [activeTab, setActiveTab] = useState("Store");
   const [gateways, setGateways] = useState(initialPaymentGateways);
+  const [shopInfo, setShopInfo] = useState<ShopInfo>(defaultShopInfo);
+  const [originalShopInfo, setOriginalShopInfo] = useState<ShopInfo>(defaultShopInfo);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Fetch shop info on mount
+  useEffect(() => {
+    fetchShopInfo();
+  }, []);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const fetchShopInfo = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/backend/shop-info");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      const info: ShopInfo = {
+        storeName: data.storeName || "",
+        supportEmail: data.supportEmail || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        openingHours: data.openingHours || "",
+        tagline: data.tagline || "",
+        description: data.description || "",
+        socialLinks: {
+          instagram: data.socialLinks?.instagram || "",
+          facebook: data.socialLinks?.facebook || "",
+          twitter: data.socialLinks?.twitter || "",
+          youtube: data.socialLinks?.youtube || "",
+        },
+      };
+      setShopInfo(info);
+      setOriginalShopInfo(info);
+    } catch (error) {
+      console.error("Error fetching shop info:", error);
+      setToast({ type: "error", message: "Failed to load shop info" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch("/api/backend/shop-info", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(shopInfo),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      const data = await res.json();
+      const updated: ShopInfo = {
+        storeName: data.shopInfo.storeName || "",
+        supportEmail: data.shopInfo.supportEmail || "",
+        phone: data.shopInfo.phone || "",
+        address: data.shopInfo.address || "",
+        openingHours: data.shopInfo.openingHours || "",
+        tagline: data.shopInfo.tagline || "",
+        description: data.shopInfo.description || "",
+        socialLinks: {
+          instagram: data.shopInfo.socialLinks?.instagram || "",
+          facebook: data.shopInfo.socialLinks?.facebook || "",
+          twitter: data.shopInfo.socialLinks?.twitter || "",
+          youtube: data.shopInfo.socialLinks?.youtube || "",
+        },
+      };
+      setShopInfo(updated);
+      setOriginalShopInfo(updated);
+      setToast({ type: "success", message: "Shop info saved successfully!" });
+    } catch (error) {
+      console.error("Error saving shop info:", error);
+      setToast({ type: "error", message: "Failed to save shop info" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    setShopInfo({ ...originalShopInfo });
+  };
+
+  const hasChanges = JSON.stringify(shopInfo) !== JSON.stringify(originalShopInfo);
 
   const toggleGateway = (index: number) => {
     const newGateways = [...gateways];
@@ -39,8 +165,37 @@ export default function SettingsPage() {
     setGateways(newGateways);
   };
 
+  const updateField = (field: keyof ShopInfo, value: string) => {
+    setShopInfo((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateSocialLink = (platform: keyof ShopInfo["socialLinks"], value: string) => {
+    setShopInfo((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [platform]: value },
+    }));
+  };
+
   return (
-    <div className="flex gap-6 max-w-6xl mx-auto h-[calc(100vh-14rem)] min-h-[500px]">
+    <div className="flex gap-6 max-w-6xl mx-auto h-[calc(100vh-14rem)] min-h-[500px] relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg border text-sm font-medium transition-all animate-[slideIn_0.3s_ease-out] ${
+            toast.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle size={18} className="text-emerald-500" />
+          ) : (
+            <AlertCircle size={18} className="text-red-500" />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       {/* Left Sidebar */}
       <div className="w-64 bg-white rounded-3xl border border-gray-100 p-3 h-fit shrink-0 shadow-sm shadow-gray-100/50">
         <nav className="flex flex-col gap-1">
@@ -73,76 +228,170 @@ export default function SettingsPage() {
             <>
               <h2 className="text-2xl font-serif text-gray-900">Store Information</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Public details shown to customers
+                Public details shown to customers on the website
               </p>
 
-              <div className="grid grid-cols-2 gap-x-6 gap-y-6 mt-8">
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                    Store Name
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="Saanvi Saree Atelier"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
-                  />
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 size={32} className="animate-spin text-[#a1005b]" />
                 </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                    Support Email
-                  </label>
-                  <input
-                    type="email"
-                    defaultValue="hello@saanvi.in"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    defaultValue="+91 98765 43210"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                    GSTIN
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="27AABCS1234N1Z5"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                    Address
-                  </label>
-                  <textarea
-                    defaultValue="3rd Floor, Linking Road, Bandra West, Mumbai 400050"
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                  Logo
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#a1005b] to-[#be185d] text-white flex items-center justify-center shadow-md shadow-[#a1005b]/20">
-                    <Sparkles size={32} />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-6 mt-8">
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Store Name
+                      </label>
+                      <input
+                        type="text"
+                        value={shopInfo.storeName}
+                        onChange={(e) => updateField("storeName", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Support Email
+                      </label>
+                      <input
+                        type="email"
+                        value={shopInfo.supportEmail}
+                        onChange={(e) => updateField("supportEmail", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={shopInfo.phone}
+                        onChange={(e) => updateField("phone", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Opening Hours
+                      </label>
+                      <input
+                        type="text"
+                        value={shopInfo.openingHours}
+                        onChange={(e) => updateField("openingHours", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Address
+                      </label>
+                      <textarea
+                        value={shopInfo.address}
+                        onChange={(e) => updateField("address", e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all resize-none"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Tagline
+                      </label>
+                      <input
+                        type="text"
+                        value={shopInfo.tagline}
+                        onChange={(e) => updateField("tagline", e.target.value)}
+                        placeholder={`e.g. "Elegance in every thread."`}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Store Description
+                      </label>
+                      <textarea
+                        value={shopInfo.description}
+                        onChange={(e) => updateField("description", e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all resize-none"
+                      />
+                    </div>
                   </div>
-                  <button className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                    <Upload size={16} />
-                    Replace Logo
-                  </button>
-                </div>
-              </div>
+
+                  {/* Social Links Section */}
+                  <div className="mt-10">
+                    <h3 className="text-lg font-serif text-gray-900 mb-1">Social Media Links</h3>
+                    <p className="text-sm text-gray-500 mb-6">
+                      Add your social media URLs to display on the website
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                          Instagram
+                        </label>
+                        <input
+                          type="url"
+                          value={shopInfo.socialLinks.instagram}
+                          onChange={(e) => updateSocialLink("instagram", e.target.value)}
+                          placeholder="https://instagram.com/..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                          Facebook
+                        </label>
+                        <input
+                          type="url"
+                          value={shopInfo.socialLinks.facebook}
+                          onChange={(e) => updateSocialLink("facebook", e.target.value)}
+                          placeholder="https://facebook.com/..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                          Twitter / X
+                        </label>
+                        <input
+                          type="url"
+                          value={shopInfo.socialLinks.twitter}
+                          onChange={(e) => updateSocialLink("twitter", e.target.value)}
+                          placeholder="https://twitter.com/..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                          YouTube
+                        </label>
+                        <input
+                          type="url"
+                          value={shopInfo.socialLinks.youtube}
+                          onChange={(e) => updateSocialLink("youtube", e.target.value)}
+                          placeholder="https://youtube.com/..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      Logo
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#a1005b] to-[#be185d] text-white flex items-center justify-center shadow-md shadow-[#a1005b]/20">
+                        <Sparkles size={32} />
+                      </div>
+                      <button className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <Upload size={16} />
+                        Replace Logo
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -197,11 +446,28 @@ export default function SettingsPage() {
 
         {/* Bottom Actions (kept fixed at the bottom of the card container) */}
         <div className="pt-6 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white">
-          <button className="px-6 py-2.5 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={handleDiscard}
+            disabled={!hasChanges || saving}
+            className={`px-6 py-2.5 border border-gray-200 rounded-full text-sm font-medium transition-colors ${
+              hasChanges && !saving
+                ? "text-gray-700 hover:bg-gray-50"
+                : "text-gray-300 cursor-not-allowed"
+            }`}
+          >
             Discard
           </button>
-          <button className="px-6 py-2.5 bg-[#a1005b] text-white rounded-full text-sm font-medium hover:opacity-90 shadow-sm shadow-[#a1005b]/30 transition-colors">
-            Save Changes
+          <button
+            onClick={handleSave}
+            disabled={!hasChanges || saving}
+            className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+              hasChanges && !saving
+                ? "bg-[#a1005b] text-white hover:opacity-90 shadow-sm shadow-[#a1005b]/30"
+                : "bg-[#a1005b]/40 text-white/60 cursor-not-allowed"
+            }`}
+          >
+            {saving && <Loader2 size={16} className="animate-spin" />}
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
