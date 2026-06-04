@@ -14,6 +14,9 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  IndianRupee,
+  Banknote,
+  Info,
 } from "lucide-react";
 
 const navigationItems = [
@@ -46,6 +49,10 @@ interface ShopInfo {
     twitter: string;
     youtube: string;
   };
+  shippingCosts: {
+    cardPayment: number;
+    cashOnDelivery: number;
+  };
 }
 
 const defaultShopInfo: ShopInfo = {
@@ -61,6 +68,10 @@ const defaultShopInfo: ShopInfo = {
     facebook: "",
     twitter: "",
     youtube: "",
+  },
+  shippingCosts: {
+    cardPayment: 0,
+    cashOnDelivery: 0,
   },
 };
 
@@ -106,6 +117,10 @@ export default function SettingsPage() {
           twitter: data.socialLinks?.twitter || "",
           youtube: data.socialLinks?.youtube || "",
         },
+        shippingCosts: {
+          cardPayment: data.shippingCosts?.cardPayment ?? 0,
+          cashOnDelivery: data.shippingCosts?.cashOnDelivery ?? 0,
+        },
       };
       setShopInfo(info);
       setOriginalShopInfo(info);
@@ -140,6 +155,10 @@ export default function SettingsPage() {
           facebook: data.shopInfo.socialLinks?.facebook || "",
           twitter: data.shopInfo.socialLinks?.twitter || "",
           youtube: data.shopInfo.socialLinks?.youtube || "",
+        },
+        shippingCosts: {
+          cardPayment: data.shopInfo.shippingCosts?.cardPayment ?? 0,
+          cashOnDelivery: data.shopInfo.shippingCosts?.cashOnDelivery ?? 0,
         },
       };
       setShopInfo(updated);
@@ -437,7 +456,136 @@ export default function SettingsPage() {
             </>
           )}
           
-          {activeTab !== "Store" && activeTab !== "Payment" && (
+          {activeTab === "Shipping" && (
+            <>
+              <h2 className="text-2xl font-serif text-gray-900">Shipping Costs</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Configure shipping charges based on payment method. These charges are applied <strong>once per order</strong>, regardless of the number of items.
+              </p>
+
+              {/* Info Banner */}
+              <div className="mt-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <Info size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-amber-800">
+                  Shipping cost is a <strong>flat fee per order</strong>. Whether a customer orders 1 saree or 10 sarees, the same shipping charge applies. Set to <strong>0</strong> to offer free shipping for that payment method.
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 size={32} className="animate-spin text-[#a1005b]" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  {/* Card / Online Payment Shipping */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <CreditCard size={20} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">Card / Online Payment</h3>
+                        <p className="text-xs text-gray-500">Razorpay, Stripe, UPI, etc.</p>
+                      </div>
+                    </div>
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      Shipping Charge (₹)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <IndianRupee size={16} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={shopInfo.shippingCosts.cardPayment}
+                        onChange={(e) =>
+                          setShopInfo((prev) => ({
+                            ...prev,
+                            shippingCosts: {
+                              ...prev.shippingCosts,
+                              cardPayment: Math.max(0, Number(e.target.value) || 0),
+                            },
+                          }))
+                        }
+                        className="w-full pl-9 pr-4 py-3 border border-blue-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300/40 focus:border-blue-400 transition-all bg-white"
+                        placeholder="0"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Charged when customer pays via card or online</p>
+                  </div>
+
+                  {/* Cash on Delivery Shipping */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                        <Banknote size={20} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">Cash on Delivery</h3>
+                        <p className="text-xs text-gray-500">Customer pays at doorstep</p>
+                      </div>
+                    </div>
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      Shipping Charge (₹)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <IndianRupee size={16} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={shopInfo.shippingCosts.cashOnDelivery}
+                        onChange={(e) =>
+                          setShopInfo((prev) => ({
+                            ...prev,
+                            shippingCosts: {
+                              ...prev.shippingCosts,
+                              cashOnDelivery: Math.max(0, Number(e.target.value) || 0),
+                            },
+                          }))
+                        }
+                        className="w-full pl-9 pr-4 py-3 border border-emerald-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300/40 focus:border-emerald-400 transition-all bg-white"
+                        placeholder="0"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Charged when customer opts for cash on delivery</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Summary Preview */}
+              {!loading && (
+                <div className="mt-8 bg-gray-50 border border-gray-100 rounded-2xl p-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Preview — How it works</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Customer orders 1 saree via <strong>Card Payment</strong></span>
+                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cardPayment}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Customer orders 5 sarees via <strong>Card Payment</strong></span>
+                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cardPayment}</span>
+                    </div>
+                    <hr className="border-gray-200" />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Customer orders 1 saree via <strong>COD</strong></span>
+                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cashOnDelivery}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Customer orders 5 sarees via <strong>COD</strong></span>
+                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cashOnDelivery}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab !== "Store" && activeTab !== "Payment" && activeTab !== "Shipping" && (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
               <p>Configuration for {activeTab} coming soon.</p>
             </div>

@@ -18,6 +18,23 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/shop-info/shipping-costs — Public: fetch shipping costs for checkout
+router.get("/shipping-costs", async (req, res) => {
+  try {
+    let shopInfo = await ShopInfo.findOne();
+    if (!shopInfo) {
+      shopInfo = await ShopInfo.create({});
+    }
+    res.json({
+      cardPayment: shopInfo.shippingCosts?.cardPayment || 0,
+      cashOnDelivery: shopInfo.shippingCosts?.cashOnDelivery || 0,
+    });
+  } catch (error) {
+    console.error("Error fetching shipping costs:", error);
+    res.status(500).json({ message: "Failed to fetch shipping costs" });
+  }
+});
+
 // PUT /api/shop-info — Admin: update shop info
 router.put("/", async (req, res) => {
   try {
@@ -30,6 +47,7 @@ router.put("/", async (req, res) => {
       tagline,
       description,
       socialLinks,
+      shippingCosts,
     } = req.body;
 
     let shopInfo = await ShopInfo.findOne();
@@ -46,6 +64,7 @@ router.put("/", async (req, res) => {
     if (tagline !== undefined) shopInfo.tagline = tagline;
     if (description !== undefined) shopInfo.description = description;
     if (socialLinks !== undefined) shopInfo.socialLinks = socialLinks;
+    if (shippingCosts !== undefined) shopInfo.shippingCosts = shippingCosts;
 
     await shopInfo.save();
     res.json({ message: "Shop info updated successfully", shopInfo });

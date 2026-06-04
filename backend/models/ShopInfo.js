@@ -37,6 +37,10 @@ const shopInfoSchema = new mongoose.Schema(
       twitter: { type: String, default: "" },
       youtube: { type: String, default: "" },
     },
+    shippingCosts: {
+      cardPayment: { type: Number, default: 0 },
+      cashOnDelivery: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );
