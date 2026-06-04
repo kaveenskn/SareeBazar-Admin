@@ -28,7 +28,7 @@ import { Product, ViewMode, ProductFilters as Filters, CATEGORIES } from "./type
 import ProductFormModal from "./components/ProductFormModal";
 import ProductViewModal from "./components/ProductViewModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
-import { fetchProducts, createProduct, updateProduct, deleteProduct, ApiProduct } from "./api";
+import { fetchProducts, createProduct, updateProduct, deleteProduct, ApiProduct, fetchCollections, ApiCollection } from "./api";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -71,6 +71,7 @@ function mapApiToProduct(api: ApiProduct): Product {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [collections, setCollections] = useState<ApiCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,17 +93,21 @@ export default function ProductsPage() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [activeFilterTab, setActiveFilterTab] = useState("All");
 
-  /* ── Load products from backend ── */
+  /* ── Load products and collections from backend ── */
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const apiProducts = await fetchProducts();
+      const [apiProducts, apiCollections] = await Promise.all([
+        fetchProducts(),
+        fetchCollections()
+      ]);
       setProducts(apiProducts.map(mapApiToProduct));
+      setCollections(apiCollections);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to load products";
+      const message = err instanceof Error ? err.message : "Failed to load data";
       setError(message);
-      console.error("Failed to load products:", err);
+      console.error("Failed to load data:", err);
     } finally {
       setLoading(false);
     }
@@ -238,7 +243,7 @@ export default function ProductsPage() {
   const openEdit = (p: Product) => { setEditingProduct(p); setShowFormModal(true); };
   const nextId = Math.max(...products.map((p) => (typeof p.id === "number" ? p.id : 0)), 0) + 1;
 
-  const categoryTabs = ["All", ...new Set(products.map((p) => p.category))];
+  const categoryTabs = ["All", ...collections.map(c => c.title)];
 
   const stockBadge = (product: Product) => {
     const stock = product.stock ?? 0;

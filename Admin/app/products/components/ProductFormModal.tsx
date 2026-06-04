@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { X, Upload, Plus, Trash2, ChevronDown, ImageIcon, Film } from "lucide-react";
-import { Product, CATEGORIES, FABRICS, SIZES, BADGES } from "../types";
+import { Product, FABRICS, SIZES, BADGES } from "../types";
 import { uploadFiles } from "../../../utils/uploadthing";
+import { fetchCollections, ApiCollection } from "../api";
 
 interface ProductFormModalProps {
   product?: Product | null;
@@ -139,6 +140,17 @@ export default function ProductFormModal({
   const [slotColors, setSlotColors] = useState(
     Array(4).fill({ hex: "#000000", name: "" })
   );
+
+  // Dynamic collections for category dropdown
+  const [collectionsList, setCollectionsList] = useState<ApiCollection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(true);
+
+  useEffect(() => {
+    fetchCollections()
+      .then((data) => setCollectionsList(data))
+      .catch((err) => console.error("Failed to load collections:", err))
+      .finally(() => setLoadingCollections(false));
+  }, []);
 
   const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
   const [isUploading, setIsUploading] = useState(false);
@@ -359,15 +371,33 @@ export default function ProductFormModal({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Category *</label>
+                  <label className={labelClass}>Collection *</label>
                   <div className="relative">
-                    <select className={`${inputClass("category")} appearance-none pr-10`} value={form.category} onChange={(e) => updateField("category", e.target.value)}>
-                      <option value="">Select category</option>
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <select
+                      className={`${inputClass("category")} appearance-none pr-10`}
+                      value={form.collection || ""}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedCol = collectionsList.find((c) => c._id === selectedId);
+                        updateField("collection", selectedId || undefined);
+                        updateField("category", selectedCol ? selectedCol.title : "");
+                      }}
+                    >
+                      <option value="">
+                        {loadingCollections ? "Loading collections..." : "Select collection"}
+                      </option>
+                      {collectionsList.map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.title}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
                   {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
+                  {collectionsList.length === 0 && !loadingCollections && (
+                    <p className="text-xs text-amber-600 mt-1">No collections found. Create one in the Collections page first.</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>Fabric</label>

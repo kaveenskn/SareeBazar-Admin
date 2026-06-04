@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema(
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviews: { type: Number, default: 0, min: 0 },
     category: { type: String, required: true, trim: true },
+    collection: { type: mongoose.Schema.Types.ObjectId, ref: "Collection", default: null },
     badge: { type: String, default: "" },
     description: { type: String, default: "" },
     fabric: { type: String, default: "" },
