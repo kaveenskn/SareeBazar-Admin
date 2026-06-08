@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, Upload, Plus, Trash2, ChevronDown, ImageIcon, Film } from "lucide-react";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "../../../utils/cropImage";
 import { Product, FABRICS, SIZES, BADGES } from "../types";
 import { uploadFiles } from "../../../utils/uploadthing";
 import { fetchCollections, ApiCollection } from "../api";
@@ -140,6 +142,42 @@ export default function ProductFormModal({
   const [slotColors, setSlotColors] = useState(
     Array(4).fill({ hex: "#000000", name: "" })
   );
+
+  // Cropper state
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [currentCropField, setCurrentCropField] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const applyCrop = async () => {
+    if (!imageToCrop || !croppedAreaPixels || !currentCropField) return;
+    try {
+      const croppedFile = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      if (croppedFile) {
+        const objectUrl = URL.createObjectURL(croppedFile);
+        if (currentCropField === "image") {
+          updateField("image", objectUrl);
+        } else if (currentCropField.startsWith("images[")) {
+          const arrIdx = parseInt(currentCropField.match(/\[(\d+)\]/)?.[1] || "0");
+          const newImages = [...(form.images || [])];
+          newImages[arrIdx] = objectUrl;
+          updateField("images", newImages);
+        }
+        setFilesToUpload(prev => ({ ...prev, [currentCropField]: croppedFile }));
+      }
+      setShowCropModal(false);
+      setImageToCrop(null);
+      setCurrentCropField(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Dynamic collections for category dropdown
   const [collectionsList, setCollectionsList] = useState<ApiCollection[]>([]);
@@ -462,8 +500,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          updateField("image", URL.createObjectURL(file));
-                          setFilesToUpload(prev => ({ ...prev, image: file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("image");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -502,10 +542,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[0] = URL.createObjectURL(file); 
-                          updateField("images", newImages); 
-                          setFilesToUpload(prev => ({ ...prev, "images[0]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[0]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -546,10 +586,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[1] = URL.createObjectURL(file); 
-                          updateField("images", newImages); 
-                          setFilesToUpload(prev => ({ ...prev, "images[1]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[1]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -590,10 +630,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[2] = URL.createObjectURL(file); 
-                          updateField("images", newImages);
-                          setFilesToUpload(prev => ({ ...prev, "images[2]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[2]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -708,6 +748,64 @@ export default function ProductFormModal({
           </button>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      {showCropModal && imageToCrop && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowCropModal(false)} />
+          <div className="relative bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="text-lg font-semibold text-gray-900">Crop Image</h3>
+              <button onClick={() => setShowCropModal(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="relative w-full h-[60vh] bg-black/5">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 4}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+                classes={{ containerClassName: "w-full h-full" }}
+              />
+            </div>
+            
+            <div className="p-4 bg-white border-t flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-500">Zoom</span>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-[#a1005b]"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowCropModal(false)}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={applyCrop}
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-[#a1005b] rounded-xl hover:bg-[#800048] shadow-sm shadow-[#a1005b]/20"
+                >
+                  Apply Crop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

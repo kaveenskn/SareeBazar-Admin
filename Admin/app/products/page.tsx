@@ -24,7 +24,7 @@ import {
   Box,
   Loader2,
 } from "lucide-react";
-import { Product, ViewMode, ProductFilters as Filters, CATEGORIES } from "./types";
+import { Product, ViewMode, ProductFilters as Filters } from "./types";
 import ProductFormModal from "./components/ProductFormModal";
 import ProductViewModal from "./components/ProductViewModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
