@@ -36,10 +36,14 @@ app.use("/api/user", require("./routes/user"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/inventory", require("./routes/inventory"));
 app.use("/api/products", require("./routes/products"));
+<<<<<<< HEAD
+app.use("/api/reviews", require("./routes/reviews"));
+=======
 app.use("/api/collections", require("./routes/collections"));
 app.use("/api/virtual-tryon", require("./routes/virtualTryon"));
 app.use("/api/customers", require("./routes/customers"));
 app.use("/api/shop-info", require("./routes/shopInfo"));
+>>>>>>> 6343767bb636490551570e1022e8752bc079c1e1
 
 app.get("/", (req, res) => res.json({ message: "SareeBazar API running" }));
 
