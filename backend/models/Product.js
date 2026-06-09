@@ -45,7 +45,7 @@ const productSchema = new mongoose.Schema(
 );
 
 // Pre-save hook: auto-compute sale price
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   if (this.status === "sale" && this.discountPercent > 0) {
     // If originalPrice is not already set, the entered price IS the MRP
     if (!this.originalPrice || this.isModified("discountPercent") || this.isModified("price")) {
@@ -61,7 +61,6 @@ productSchema.pre("save", function (next) {
     this.originalPrice = null;
     this.discountPercent = null;
   }
-  next();
 });
 
 // Virtual id field for frontend compatibility
