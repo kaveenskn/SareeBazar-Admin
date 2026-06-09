@@ -15,17 +15,19 @@ const allowedOrigins = [
   process.env.ADMIN_URL || "http://localhost:3001",
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Allow all for demo
-    }
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all for demo
+      }
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
@@ -36,14 +38,11 @@ app.use("/api/user", require("./routes/user"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/inventory", require("./routes/inventory"));
 app.use("/api/products", require("./routes/products"));
-<<<<<<< HEAD
 app.use("/api/reviews", require("./routes/reviews"));
-=======
 app.use("/api/collections", require("./routes/collections"));
 app.use("/api/virtual-tryon", require("./routes/virtualTryon"));
 app.use("/api/customers", require("./routes/customers"));
 app.use("/api/shop-info", require("./routes/shopInfo"));
->>>>>>> 6343767bb636490551570e1022e8752bc079c1e1
 
 app.get("/", (req, res) => res.json({ message: "SareeBazar API running" }));
 

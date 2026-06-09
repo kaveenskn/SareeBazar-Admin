@@ -1,22 +1,76 @@
 const express = require("express");
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // ─── POST /api/orders ─── (place order)
 router.post("/", protect, async (req, res) => {
   try {
-    const { items, shipping, subtotal, shippingFee, discount, total, paymentId, paymentMethod, paymentStatus } = req.body;
+    const {
+      items,
+      shipping,
+      subtotal,
+      shippingFee,
+      discount,
+      total,
+      paymentId,
+      paymentMethod,
+      paymentStatus,
+    } = req.body;
 
     // Validate required fields
     if (!items || !items.length) {
-      return res.status(400).json({ message: "Order must have at least one item" });
+      return res
+        .status(400)
+        .json({ message: "Order must have at least one item" });
     }
-    if (!shipping || !shipping.fullName || !shipping.addressLine1 || !shipping.city) {
-      return res.status(400).json({ message: "Shipping address is incomplete" });
+    if (
+      !shipping ||
+      !shipping.fullName ||
+      !shipping.addressLine1 ||
+      !shipping.city
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Shipping address is incomplete" });
     }
     if (!total || !paymentMethod) {
-      return res.status(400).json({ message: "Total and payment method are required" });
+      return res
+        .status(400)
+        .json({ message: "Total and payment method are required" });
+    }
+
+    // Check inventory and decrease stock
+    console.log("Checking inventory for items:", items);
+    for (const item of items) {
+      console.log("Looking up product with ID:", item.productId);
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        console.log("Product not found");
+        return res
+          .status(404)
+          .json({ message: `Product not found: ${item.name}` });
+      }
+
+      const quantity = item.quantity || 1;
+      console.log(
+        `Current stock: ${product.stock}, Ordered quantity: ${quantity}`,
+      );
+      if (product.stock < quantity) {
+        console.log("Out of stock");
+        return res
+          .status(400)
+          .json({ message: `Out of stock for product: ${item.name}` });
+      }
+
+      product.stock -= quantity;
+      if (product.stock <= 0) {
+        product.stock = 0;
+        product.inStock = false;
+      }
+      console.log(`Saving product with new stock: ${product.stock}`);
+      await product.save();
     }
 
     // Generate unique order ID
@@ -24,7 +78,10 @@ router.post("/", protect, async (req, res) => {
 
     // Determine payment status
     let resolvedPaymentStatus = paymentStatus || "pending";
-    if (paymentMethod.toLowerCase() === "cash on delivery" || paymentMethod.toLowerCase() === "cod") {
+    if (
+      paymentMethod.toLowerCase() === "cash on delivery" ||
+      paymentMethod.toLowerCase() === "cod"
+    ) {
       resolvedPaymentStatus = "cod";
     } else if (paymentId) {
       // If a paymentId is provided, the payment gateway confirmed it
@@ -32,9 +89,10 @@ router.post("/", protect, async (req, res) => {
     }
 
     // Set order status based on payment
-    const orderStatus = resolvedPaymentStatus === "paid" || resolvedPaymentStatus === "cod"
-      ? "confirmed"
-      : "pending";
+    const orderStatus =
+      resolvedPaymentStatus === "paid" || resolvedPaymentStatus === "cod"
+        ? "confirmed"
+        : "pending";
 
     const order = await Order.create({
       user: req.userId,
@@ -53,7 +111,9 @@ router.post("/", protect, async (req, res) => {
 
     res.status(201).json({ order });
   } catch (err) {
-    res.status(500).json({ message: "Failed to place order", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to place order", error: err.message });
   }
 });
 
@@ -65,7 +125,9 @@ router.get("/admin/all", async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ orders });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch orders", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch orders", error: err.message });
   }
 });
 
@@ -77,38 +139,55 @@ router.patch("/admin/:orderId/status", async (req, res) => {
       return res.status(400).json({ message: "Status is required" });
     }
 
-    const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+    const validStatuses = [
+      "pending",
+      "confirmed",
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+    ];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+      return res.status(400).json({
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
     }
 
     const order = await Order.findOneAndUpdate(
       { orderId: req.params.orderId },
       { status },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     ).populate("user", "name email");
 
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json({ order });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update order status", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update order status", error: err.message });
   }
 });
 
 // ─── GET /api/orders ─── (user's orders)
 router.get("/", protect, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.userId }).sort({
+      createdAt: -1,
+    });
     res.json({ orders });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch orders", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch orders", error: err.message });
   }
 });
 
 // ─── GET /api/orders/all ─── Get all orders (admin)
 router.get("/all", protect, async (req, res) => {
   try {
-    const orders = await Order.find().populate("user", "name email").sort({ createdAt: -1 });
+    const orders = await Order.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -118,16 +197,24 @@ router.get("/all", protect, async (req, res) => {
 // ─── GET /api/orders/:orderId ───
 router.get("/:orderId", protect, async (req, res) => {
   try {
-    const order = await Order.findOne({ orderId: req.params.orderId, user: req.userId });
+    const order = await Order.findOne({
+      orderId: req.params.orderId,
+      user: req.userId,
+    });
     if (!order) {
       // Try finding by internal _id for admin panel
-      const adminOrder = await Order.findById(req.params.orderId).populate("user", "name email");
+      const adminOrder = await Order.findById(req.params.orderId).populate(
+        "user",
+        "name email",
+      );
       if (adminOrder) return res.json(adminOrder);
       return res.status(404).json({ message: "Order not found" });
     }
     res.json({ order });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch order", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch order", error: err.message });
   }
 });
 
@@ -171,13 +258,15 @@ router.patch("/:orderId/payment", protect, async (req, res) => {
     const order = await Order.findOneAndUpdate(
       { orderId: req.params.orderId, user: req.userId },
       update,
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json({ order });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update payment", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update payment", error: err.message });
   }
 });
 
@@ -187,16 +276,23 @@ router.patch("/:orderId/cancel", protect, async (req, res) => {
     const { reason } = req.body;
 
     if (!reason || !reason.trim()) {
-      return res.status(400).json({ message: "Cancellation reason is required" });
+      return res
+        .status(400)
+        .json({ message: "Cancellation reason is required" });
     }
 
-    const order = await Order.findOne({ orderId: req.params.orderId, user: req.userId });
+    const order = await Order.findOne({
+      orderId: req.params.orderId,
+      user: req.userId,
+    });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
     if (["shipped", "delivered", "cancelled"].includes(order.status)) {
-      return res.status(400).json({ message: `Order cannot be cancelled because it is already ${order.status}` });
+      return res.status(400).json({
+        message: `Order cannot be cancelled because it is already ${order.status}`,
+      });
     }
 
     order.status = "cancelled";
@@ -205,7 +301,9 @@ router.patch("/:orderId/cancel", protect, async (req, res) => {
 
     res.json({ message: "Order cancelled successfully", order });
   } catch (err) {
-    res.status(500).json({ message: "Failed to cancel order", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to cancel order", error: err.message });
   }
 });
 
