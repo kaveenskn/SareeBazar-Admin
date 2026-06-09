@@ -46,9 +46,14 @@ export default function ProductViewModal({
             <h2 className="text-xl font-semibold text-gray-900">
               Product Details
             </h2>
-            {product.badge && (
-              <span className="px-2.5 py-1 bg-[#fdf2f8] text-[#d93097] text-xs font-medium rounded-full">
-                {product.badge}
+            {product.status && (
+              <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                product.status === "sale" ? "bg-red-50 text-red-600" :
+                product.status === "trending" ? "bg-purple-50 text-purple-600" :
+                "bg-blue-50 text-blue-600"
+              }`}>
+                {product.status === "sale" ? `Sale ${product.discountPercent ? product.discountPercent + "% OFF" : ""}` :
+                 product.status === "trending" ? "Trending" : "Latest"}
               </span>
             )}
           </div>
@@ -202,16 +207,22 @@ export default function ProductViewModal({
                     Featured
                   </span>
                 )}
-                {product.isTrending && (
+                {product.status === "trending" && (
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-full text-xs font-medium">
                     <TrendingUp size={12} />
                     Trending
                   </span>
                 )}
-                {product.isLatest && (
+                {product.status === "latest" && (
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
                     <Clock size={12} />
                     Latest
+                  </span>
+                )}
+                {product.status === "sale" && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium">
+                    <Tag size={12} />
+                    Sale {product.discountPercent ? `${product.discountPercent}%` : ""}
                   </span>
                 )}
               </div>

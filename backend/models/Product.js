@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema(
     reviews: { type: Number, default: 0, min: 0 },
     category: { type: String, required: true, trim: true },
     collection: { type: mongoose.Schema.Types.ObjectId, ref: "Collection", default: null },
-    badge: { type: String, default: "" },
+    status: { type: String, enum: ["", "trending", "latest", "sale"], default: "" },
     description: { type: String, default: "" },
     fabric: { type: String, default: "" },
     color: { type: String, default: "" },
@@ -32,8 +32,6 @@ const productSchema = new mongoose.Schema(
     sizes: { type: [String], default: [] },
     discountPercent: { type: Number, default: null },
     isFeatured: { type: Boolean, default: false },
-    isLatest: { type: Boolean, default: false },
-    isTrending: { type: Boolean, default: false },
     specifications: { type: mongoose.Schema.Types.Mixed, default: {} },
     tags: { type: [String], default: [] },
     weight: { type: String, default: "" },
@@ -45,6 +43,26 @@ const productSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Pre-save hook: auto-compute sale price
+productSchema.pre("save", function (next) {
+  if (this.status === "sale" && this.discountPercent > 0) {
+    // If originalPrice is not already set, the entered price IS the MRP
+    if (!this.originalPrice || this.isModified("discountPercent") || this.isModified("price")) {
+      // Only set originalPrice from price when first setting up the sale
+      // or when price was explicitly changed (not from our own computation)
+      if (!this.originalPrice || this.isModified("price")) {
+        this.originalPrice = this.price;
+      }
+      this.price = Math.round(this.originalPrice * (1 - this.discountPercent / 100) * 100) / 100;
+    }
+  } else if (this.status !== "sale") {
+    // Clear sale-related fields when not a sale product
+    this.originalPrice = null;
+    this.discountPercent = null;
+  }
+  next();
+});
 
 // Virtual id field for frontend compatibility
 productSchema.virtual("id").get(function () {

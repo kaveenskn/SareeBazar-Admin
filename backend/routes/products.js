@@ -6,11 +6,9 @@ const Collection = require("../models/Collection");
 /* ──────────────────────────────────────────
  *  GET /api/products
  *  Query params:
- *    ?badge=Sale        → filter by badge
+ *    ?status=sale       → filter by status (trending, latest, sale)
  *    ?category=Silk     → filter by category
  *    ?featured=true     → only featured
- *    ?trending=true     → only trending
- *    ?latest=true       → only latest
  *    ?search=kanjivaram  → text search
  *    ?limit=10          → limit results
  *    ?sort=price        → sort field
@@ -19,11 +17,9 @@ const Collection = require("../models/Collection");
 router.get("/", async (req, res) => {
   try {
     const {
-      badge,
+      status,
       category,
       featured,
-      trending,
-      latest,
       search,
       limit,
       sort = "createdAt",
@@ -32,11 +28,9 @@ router.get("/", async (req, res) => {
 
     const filter = {};
 
-    if (badge) filter.badge = { $regex: new RegExp(`^${badge}$`, "i") };
+    if (status) filter.status = status.toLowerCase();
     if (category) filter.category = { $regex: new RegExp(category, "i") };
     if (featured === "true") filter.isFeatured = true;
-    if (trending === "true") filter.isTrending = true;
-    if (latest === "true") filter.isLatest = true;
 
     if (search) {
       filter.$or = [
@@ -127,10 +121,16 @@ router.post("/", async (req, res) => {
 /* ──────────────────────────────────────────
  *  PUT /api/products/:id
  *  Update an existing product
+ *  Uses findById + save() so pre-save hooks run (sale price computation)
  * ────────────────────────────────────────── */
 router.put("/:id", async (req, res) => {
   try {
     const updateData = req.body;
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     // If a collection ID is provided, look up its title and set as category
     if (updateData.collection) {
@@ -162,17 +162,12 @@ router.put("/:id", async (req, res) => {
       updateData.inStock = updateData.stock > 0;
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { returnDocument: "after", runValidators: true }
-    );
+    // Apply updates to the document
+    Object.assign(product, updateData);
 
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    const populated = await product.populate("collection", "title slug coverImage isFeatured");
+    // Save triggers pre-save hook (sale price computation)
+    const saved = await product.save();
+    const populated = await saved.populate("collection", "title slug coverImage isFeatured");
     res.json(populated);
   } catch (err) {
     console.error("PUT /api/products/:id error:", err);
