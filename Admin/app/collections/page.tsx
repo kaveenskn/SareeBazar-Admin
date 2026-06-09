@@ -332,8 +332,13 @@ export default function CollectionsPage() {
                       {col.title}
                     </h3>
                     <p className="text-white/85 text-sm font-medium">
-                      {col.productCount} product
-                      {col.productCount !== 1 ? "s" : ""}
+                      {(() => {
+                        const count = products.filter((p) => {
+                          const colId = typeof p.collection === "object" ? (p.collection as ApiCollection)?._id : p.collection;
+                          return colId === col._id || p.category === col.title;
+                        }).length;
+                        return `${count} product${count !== 1 ? "s" : ""}`;
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -385,7 +390,13 @@ export default function CollectionsPage() {
                   </h2>
                 </div>
                 <p className="text-gray-500 text-[14px]">
-                  {selectedCollection.productCount || 0} product{selectedCollection.productCount !== 1 ? "s" : ""}
+                  {(() => {
+                    const count = products.filter((p) => {
+                      const colId = typeof p.collection === "object" ? (p.collection as ApiCollection)?._id : p.collection;
+                      return colId === selectedCollection._id || p.category === selectedCollection.title;
+                    }).length;
+                    return `${count} product${count !== 1 ? "s" : ""}`;
+                  })()}
                 </p>
               </div>
               
