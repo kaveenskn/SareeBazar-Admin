@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -19,6 +20,18 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [storeName, setStoreName] = useState("SareeBazar");
+
+  useEffect(() => {
+    fetch("/api/backend/shop-info")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.storeName) {
+          setStoreName(data.storeName);
+        }
+      })
+      .catch(err => console.error("Error fetching shop info:", err));
+  }, []);
 
   const navItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -40,7 +53,7 @@ export default function Sidebar() {
           <Sparkles size={20} />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-xl text-[#a1005b] leading-none">SareeBazar</span>
+          <span className="font-bold text-xl text-[#a1005b] leading-none">{storeName}</span>
           <span className="text-[10px] text-gray-500 tracking-wider font-semibold mt-1">SAREE ATELIER</span>
         </div>
       </div>

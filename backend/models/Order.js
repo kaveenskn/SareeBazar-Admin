@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const orderItemSchema = new mongoose.Schema({
-  productId: Number,
+  productId: String,
   slug: String,
   name: String,
   selectedColor: String,

@@ -23,6 +23,7 @@ export interface Product {
   rating: number;
   reviews: number;
   category: string;
+  collection?: string; // Collection ObjectId
   badge?: string;
   isWishlisted?: boolean;
   description?: string;
@@ -59,16 +60,8 @@ export interface ProductFilters {
   sortDirection: SortDirection;
 }
 
-export const CATEGORIES = [
-  "Silk Sarees",
-  "Cotton Sarees",
-  "Handloom",
-  "Bridal",
-  "Daily Wear",
-  "Georgette",
-  "Designer",
-  "Party Wear",
-] as const;
+// Collections are now fetched dynamically from the backend
+// CATEGORIES constant removed — use fetchCollections() instead
 
 export const FABRICS = [
   "Pure Silk",

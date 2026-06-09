@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
+const Collection = require("../models/Collection");
 
 /* ──────────────────────────────────────────
  *  GET /api/products
@@ -49,7 +50,7 @@ router.get("/", async (req, res) => {
     const sortObj = {};
     sortObj[sort] = order === "asc" ? 1 : -1;
 
-    let query = Product.find(filter).sort(sortObj);
+    let query = Product.find(filter).populate("collection", "title slug coverImage isFeatured").sort(sortObj);
     if (limit) query = query.limit(parseInt(limit));
 
     const products = await query;
@@ -85,6 +86,14 @@ router.post("/", async (req, res) => {
   try {
     const productData = req.body;
 
+    // If a collection ID is provided, look up its title and set as category
+    if (productData.collection) {
+      const col = await Collection.findById(productData.collection);
+      if (col) {
+        productData.category = col.title;
+      }
+    }
+
     // Auto-generate slug
     if (!productData.slug && productData.name) {
       productData.slug = productData.name
@@ -104,7 +113,8 @@ router.post("/", async (req, res) => {
 
     const product = new Product(productData);
     const saved = await product.save();
-    res.status(201).json(saved);
+    const populated = await saved.populate("collection", "title slug coverImage isFeatured");
+    res.status(201).json(populated);
   } catch (err) {
     console.error("POST /api/products error:", err);
     if (err.code === 11000) {
@@ -121,6 +131,14 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const updateData = req.body;
+
+    // If a collection ID is provided, look up its title and set as category
+    if (updateData.collection) {
+      const col = await Collection.findById(updateData.collection);
+      if (col) {
+        updateData.category = col.title;
+      }
+    }
 
     // Re-generate slug if name changed
     if (updateData.name) {
@@ -147,14 +165,15 @@ router.put("/:id", async (req, res) => {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(product);
+    const populated = await product.populate("collection", "title slug coverImage isFeatured");
+    res.json(populated);
   } catch (err) {
     console.error("PUT /api/products/:id error:", err);
     res.status(500).json({ message: "Failed to update product", error: err.message });

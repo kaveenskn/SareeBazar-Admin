@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, Upload, Plus, Trash2, ChevronDown, ImageIcon, Film } from "lucide-react";
-import { Product, CATEGORIES, FABRICS, SIZES, BADGES } from "../types";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "../../../utils/cropImage";
+import { Product, FABRICS, SIZES, BADGES } from "../types";
 import { uploadFiles } from "../../../utils/uploadthing";
+import { fetchCollections, ApiCollection } from "../api";
 
 interface ProductFormModalProps {
   product?: Product | null;
@@ -15,6 +18,7 @@ interface ProductFormModalProps {
 
 const emptyProduct: Omit<Product, "id"> = {
   name: "",
+  slug: "",
   image: "",
   images: [],
   price: 0,
@@ -139,6 +143,53 @@ export default function ProductFormModal({
     Array(4).fill({ hex: "#000000", name: "" })
   );
 
+  // Cropper state
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [currentCropField, setCurrentCropField] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const applyCrop = async () => {
+    if (!imageToCrop || !croppedAreaPixels || !currentCropField) return;
+    try {
+      const croppedFile = await getCroppedImg(imageToCrop, croppedAreaPixels);
+      if (croppedFile) {
+        const objectUrl = URL.createObjectURL(croppedFile);
+        if (currentCropField === "image") {
+          updateField("image", objectUrl);
+        } else if (currentCropField.startsWith("images[")) {
+          const arrIdx = parseInt(currentCropField.match(/\[(\d+)\]/)?.[1] || "0");
+          const newImages = [...(form.images || [])];
+          newImages[arrIdx] = objectUrl;
+          updateField("images", newImages);
+        }
+        setFilesToUpload(prev => ({ ...prev, [currentCropField]: croppedFile }));
+      }
+      setShowCropModal(false);
+      setImageToCrop(null);
+      setCurrentCropField(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Dynamic collections for category dropdown
+  const [collectionsList, setCollectionsList] = useState<ApiCollection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(true);
+
+  useEffect(() => {
+    fetchCollections()
+      .then((data) => setCollectionsList(data))
+      .catch((err) => console.error("Failed to load collections:", err))
+      .finally(() => setLoadingCollections(false));
+  }, []);
+
   const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
   const [isUploading, setIsUploading] = useState(false);
 
@@ -207,11 +258,12 @@ export default function ProductFormModal({
          const res = await uploadFiles("imageUploader", { files: imageFiles });
          res.forEach((r, idx) => {
            const key = imageKeys[idx];
-           if (key === "image") finalForm.image = r.url;
+           const uploadedUrl = (r as any).ufsUrl || r.url;
+           if (key === "image") finalForm.image = uploadedUrl;
            else if (key.startsWith("images[")) {
               const arrIdx = parseInt(key.match(/\[(\d+)\]/)?.[1] || "0");
               if (!finalForm.images) finalForm.images = [];
-              finalForm.images[arrIdx] = r.url;
+              finalForm.images[arrIdx] = uploadedUrl;
            }
          });
       }
@@ -219,7 +271,7 @@ export default function ProductFormModal({
       if (videoFiles.length > 0) {
          const res = await uploadFiles("videoUploader", { files: videoFiles });
          res.forEach((r) => {
-           finalForm.video = r.url;
+           finalForm.video = (r as any).ufsUrl || r.url;
          });
       }
     } catch (error) {
@@ -234,7 +286,9 @@ export default function ProductFormModal({
           let imageUrl = "";
           if (i === 0) imageUrl = finalForm.image;
           else if (i <= 3) imageUrl = finalForm.images?.[i-1] || "";
-          return { name: c.name, hex: c.hex, image: imageUrl };
+          
+          const finalColorName = c.name || getNearestColorName(c.hex) || "Default";
+          return { name: finalColorName, hex: c.hex, image: imageUrl };
         })
         .filter(c => c.image && c.image.trim() !== "");
 
@@ -355,15 +409,33 @@ export default function ProductFormModal({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Category *</label>
+                  <label className={labelClass}>Collection *</label>
                   <div className="relative">
-                    <select className={`${inputClass("category")} appearance-none pr-10`} value={form.category} onChange={(e) => updateField("category", e.target.value)}>
-                      <option value="">Select category</option>
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <select
+                      className={`${inputClass("category")} appearance-none pr-10`}
+                      value={form.collection || ""}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedCol = collectionsList.find((c) => c._id === selectedId);
+                        updateField("collection", selectedId || undefined);
+                        updateField("category", selectedCol ? selectedCol.title : "");
+                      }}
+                    >
+                      <option value="">
+                        {loadingCollections ? "Loading collections..." : "Select collection"}
+                      </option>
+                      {collectionsList.map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.title}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
                   {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
+                  {collectionsList.length === 0 && !loadingCollections && (
+                    <p className="text-xs text-amber-600 mt-1">No collections found. Create one in the Collections page first.</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>Fabric</label>
@@ -428,8 +500,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          updateField("image", URL.createObjectURL(file));
-                          setFilesToUpload(prev => ({ ...prev, image: file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("image");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -468,10 +542,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[0] = URL.createObjectURL(file); 
-                          updateField("images", newImages); 
-                          setFilesToUpload(prev => ({ ...prev, "images[0]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[0]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -512,10 +586,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[1] = URL.createObjectURL(file); 
-                          updateField("images", newImages); 
-                          setFilesToUpload(prev => ({ ...prev, "images[1]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[1]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -556,10 +630,10 @@ export default function ProductFormModal({
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
                         const file = e.target.files?.[0];
                         if (file) {
-                          const newImages = [...(form.images || [])]; 
-                          newImages[2] = URL.createObjectURL(file); 
-                          updateField("images", newImages);
-                          setFilesToUpload(prev => ({ ...prev, "images[2]": file }));
+                          setImageToCrop(URL.createObjectURL(file));
+                          setCurrentCropField("images[2]");
+                          setShowCropModal(true);
+                          e.target.value = "";
                         } 
                       }} />
                     </label>
@@ -674,6 +748,64 @@ export default function ProductFormModal({
           </button>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      {showCropModal && imageToCrop && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowCropModal(false)} />
+          <div className="relative bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="text-lg font-semibold text-gray-900">Crop Image</h3>
+              <button onClick={() => setShowCropModal(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="relative w-full h-[60vh] bg-black/5">
+              <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 4}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+                classes={{ containerClassName: "w-full h-full" }}
+              />
+            </div>
+            
+            <div className="p-4 bg-white border-t flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-500">Zoom</span>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-[#a1005b]"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowCropModal(false)}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={applyCrop}
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-[#a1005b] rounded-xl hover:bg-[#800048] shadow-sm shadow-[#a1005b]/20"
+                >
+                  Apply Crop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
