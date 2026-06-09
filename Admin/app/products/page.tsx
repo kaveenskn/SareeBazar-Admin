@@ -24,7 +24,7 @@ import {
   Box,
   Loader2,
 } from "lucide-react";
-import { Product, ViewMode, ProductFilters as Filters } from "./types";
+import { Product, ViewMode, ProductFilters as Filters, PRODUCT_STATUSES } from "./types";
 import ProductFormModal from "./components/ProductFormModal";
 import ProductViewModal from "./components/ProductViewModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
@@ -47,7 +47,7 @@ function mapApiToProduct(api: ApiProduct): Product {
     rating: api.rating,
     reviews: api.reviews,
     category: api.category,
-    badge: api.badge || undefined,
+    status: (api.status as Product["status"]) || "",
     description: api.description,
     fabric: api.fabric,
     color: api.color,
@@ -57,8 +57,6 @@ function mapApiToProduct(api: ApiProduct): Product {
     sizes: api.sizes,
     discountPercent: api.discountPercent ?? undefined,
     isFeatured: api.isFeatured,
-    isLatest: api.isLatest,
-    isTrending: api.isTrending,
     specifications: api.specifications
       ? Object.fromEntries(Object.entries(api.specifications))
       : {},
@@ -80,7 +78,7 @@ export default function ProductsPage() {
     search: "",
     category: "",
     stockStatus: "all",
-    badge: "",
+    status: "",
     sortField: "createdAt",
     sortDirection: "desc",
   });
@@ -362,15 +360,16 @@ export default function ProductsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <span className="text-sm text-gray-600">{product.category}</span>
-                    {product.badge && (
-                      <span className="ml-2 px-2 py-0.5 bg-[#fdf2f8] text-[#d93097] text-[10px] font-medium rounded-full">{product.badge}</span>
-                    )}
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900">${product.price}</span>
-                      {product.originalPrice && (
-                        <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>
+                      {product.status === "sale" && product.originalPrice ? (
+                        <>
+                          <span className="text-sm font-semibold text-gray-900">${product.price}</span>
+                          <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm font-semibold text-gray-900">${product.price}</span>
                       )}
                     </div>
                   </td>
@@ -384,10 +383,11 @@ export default function ProductsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-1.5">
-                      {product.isFeatured && <span className="w-2 h-2 rounded-full bg-amber-400" title="Featured" />}
-                      {product.isTrending && <span className="w-2 h-2 rounded-full bg-purple-500" title="Trending" />}
-                      {product.isLatest && <span className="w-2 h-2 rounded-full bg-blue-500" title="Latest" />}
-                      {!product.isFeatured && !product.isTrending && !product.isLatest && <span className="text-xs text-gray-300">—</span>}
+                      {product.isFeatured && <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-medium rounded-full">Featured</span>}
+                      {product.status === "trending" && <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-medium rounded-full">Trending</span>}
+                      {product.status === "latest" && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-medium rounded-full">Latest</span>}
+                      {product.status === "sale" && <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-medium rounded-full">Sale {product.discountPercent ? `${product.discountPercent}%` : ""}</span>}
+                      {!product.isFeatured && !product.status && <span className="text-xs text-gray-300">—</span>}
                     </div>
                   </td>
                   <td className="py-4 px-6">
@@ -431,8 +431,10 @@ export default function ProductsPage() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300"><Package size={40} strokeWidth={1.5} /></div>
                 )}
-                {product.badge && (
-                  <span className="absolute top-3 left-3 px-2.5 py-1 bg-[#d93097] text-white text-xs font-medium rounded-full shadow-sm">{product.badge}</span>
+                {product.status && (
+                  <span className={`absolute top-3 left-3 px-2.5 py-1 text-white text-xs font-medium rounded-full shadow-sm ${product.status === "sale" ? "bg-red-500" : product.status === "trending" ? "bg-purple-500" : "bg-blue-500"}`}>
+                    {product.status === "sale" ? `Sale ${product.discountPercent ? product.discountPercent + "% OFF" : ""}` : product.status === "trending" ? "Trending" : "Latest"}
+                  </span>
                 )}
                 <div className="absolute top-3 right-3 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => setViewingProduct(product)} className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-gray-600 hover:text-[#d93097] shadow-sm transition-colors"><Eye size={14} /></button>
@@ -449,7 +451,7 @@ export default function ProductsPage() {
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-lg font-bold text-gray-900">${product.price}</span>
-                    {product.originalPrice && <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>}
+                    {product.status === "sale" && product.originalPrice && <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>}
                   </div>
                   <div className="flex items-center gap-1">
                     <Star size={12} className="text-amber-400 fill-amber-400" />

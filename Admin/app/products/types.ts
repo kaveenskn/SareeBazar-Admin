@@ -24,7 +24,7 @@ export interface Product {
   reviews: number;
   category: string;
   collection?: string; // Collection ObjectId
-  badge?: string;
+  status?: "trending" | "latest" | "sale" | "";
   isWishlisted?: boolean;
   description?: string;
   fabric?: string;
@@ -38,8 +38,6 @@ export interface Product {
   sizes?: string[];
   discountPercent?: number;
   isFeatured?: boolean;
-  isLatest?: boolean;
-  isTrending?: boolean;
   specifications?: Record<string, string>;
   tags?: string[];
   weight?: string;
@@ -55,7 +53,7 @@ export interface ProductFilters {
   search: string;
   category: string;
   stockStatus: "all" | "inStock" | "outOfStock" | "lowStock";
-  badge: string;
+  status: string;
   sortField: SortField;
   sortDirection: SortDirection;
 }
@@ -86,10 +84,8 @@ export const SIZES = [
   "9m",
 ] as const;
 
-export const BADGES = [
-  "New",
-  "Best Seller",
-  "Trending",
-  "Limited Edition",
-  "Sale",
+export const PRODUCT_STATUSES = [
+  { value: "trending", label: "Trending" },
+  { value: "latest", label: "Latest" },
+  { value: "sale", label: "Sale" },
 ] as const;

@@ -21,7 +21,7 @@ export interface ApiProduct {
   reviews: number;
   category: string;
   collection: string | ApiCollection | null;
-  badge: string;
+  status: string;
   description: string;
   fabric: string;
   color: string;
@@ -31,8 +31,6 @@ export interface ApiProduct {
   sizes: string[];
   discountPercent: number | null;
   isFeatured: boolean;
-  isLatest: boolean;
-  isTrending: boolean;
   specifications: Record<string, string>;
   tags: string[];
   weight: string;

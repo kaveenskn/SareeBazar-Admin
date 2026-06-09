@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Upload, Plus, Trash2, ChevronDown, ImageIcon, Film } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "../../../utils/cropImage";
-import { Product, FABRICS, SIZES, BADGES } from "../types";
+import { Product, FABRICS, SIZES, PRODUCT_STATUSES } from "../types";
 import { uploadFiles } from "../../../utils/uploadthing";
 import { fetchCollections, ApiCollection } from "../api";
 
@@ -26,7 +26,7 @@ const emptyProduct: Omit<Product, "id"> = {
   rating: 0,
   reviews: 0,
   category: "",
-  badge: "",
+  status: "",
   description: "",
   fabric: "",
   color: "",
@@ -36,8 +36,6 @@ const emptyProduct: Omit<Product, "id"> = {
   sizes: [],
   discountPercent: undefined,
   isFeatured: false,
-  isLatest: false,
-  isTrending: false,
   specifications: {},
   tags: [],
   weight: "",
@@ -700,30 +698,75 @@ export default function ProductFormModal({
           {activeTab === "details" && (
             <>
               <div>
-                <label className={labelClass}>Badge</label>
+                <label className={labelClass}>Product Status</label>
                 <div className="relative">
-                  <select className={`${inputClass()} appearance-none pr-10`} value={form.badge || ""} onChange={(e) => updateField("badge", e.target.value)}>
+                  <select
+                    className={`${inputClass()} appearance-none pr-10`}
+                    value={form.status || ""}
+                    onChange={(e) => {
+                      const newStatus = e.target.value as Product["status"];
+                      updateField("status", newStatus);
+                      // Clear sale fields when switching away from sale
+                      if (newStatus !== "sale") {
+                        updateField("discountPercent", undefined);
+                        updateField("originalPrice", undefined);
+                      }
+                    }}
+                  >
                     <option value="">None</option>
-                    {BADGES.map((b) => <option key={b} value={b}>{b}</option>)}
+                    {PRODUCT_STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
                   </select>
                   <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div>
-                <label className={labelClass}>Product Status</label>
-                <div className="grid grid-cols-3 gap-3 mt-1">
-                  {([
-                    { key: "isFeatured" as const, label: "Featured", color: "amber" },
-                    { key: "isLatest" as const, label: "Latest", color: "blue" },
-                    { key: "isTrending" as const, label: "Trending", color: "purple" },
-                  ] as const).map((status) => (
-                    <button key={status.key} onClick={() => updateField(status.key, !form[status.key])} className={`p-3 rounded-xl border text-sm font-medium text-center transition-all ${form[status.key] ? `bg-${status.color}-50 border-${status.color}-200 text-${status.color}-700` : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}
-                      style={form[status.key] ? { backgroundColor: status.color === "amber" ? "#fffbeb" : status.color === "blue" ? "#eff6ff" : "#faf5ff", borderColor: status.color === "amber" ? "#fcd34d" : status.color === "blue" ? "#93c5fd" : "#c4b5fd", color: status.color === "amber" ? "#b45309" : status.color === "blue" ? "#1d4ed8" : "#7c3aed" } : {}}>
-                      {form[status.key] ? "✓ " : ""}{status.label}
-                    </button>
-                  ))}
+
+              {/* Sale Discount Input — only visible when status is "sale" */}
+              {form.status === "sale" && (
+                <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 space-y-3">
+                  <div>
+                    <label className={labelClass}>Discount Percentage (%)</label>
+                    <input
+                      type="number"
+                      className={inputClass()}
+                      placeholder="e.g. 25"
+                      min="1"
+                      max="99"
+                      value={form.discountPercent || ""}
+                      onChange={(e) => updateField("discountPercent", Number(e.target.value) || undefined)}
+                    />
+                  </div>
+                  {form.discountPercent && form.price > 0 && (
+                    <div className="flex items-center gap-3 pt-2 border-t border-red-100">
+                      <span className="text-sm text-gray-500">Offer Price Preview:</span>
+                      <span className="text-sm text-gray-400 line-through">${form.price}</span>
+                      <span className="text-lg font-bold text-red-600">
+                        ${Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100}
+                      </span>
+                      <span className="text-xs font-medium text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
+                        {form.discountPercent}% OFF
+                      </span>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Featured Toggle */}
+              <div>
+                <label className={labelClass}>Featured</label>
+                <button
+                  onClick={() => updateField("isFeatured", !form.isFeatured)}
+                  className={`p-3 rounded-xl border text-sm font-medium text-center transition-all w-full ${
+                    form.isFeatured
+                      ? "bg-amber-50 border-amber-200 text-amber-700"
+                      : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
+                  }`}
+                >
+                  {form.isFeatured ? "✓ Featured" : "Featured"}
+                </button>
               </div>
+
               {!isEditing && (
                 <div className="grid grid-cols-1 gap-4">
                   <div>
