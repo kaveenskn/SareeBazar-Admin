@@ -11,6 +11,7 @@
   --color-foreground: var(--foreground);
   --color-magenta: var(--magenta);
   --font-sans: var(--font-outfit);
+  --font-serif: var(--font-outfit);
   --font-mono: monospace;
   --default-font-family: var(--font-outfit);
 }
