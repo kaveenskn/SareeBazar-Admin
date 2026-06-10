@@ -138,7 +138,7 @@ export default function ProductFormModal({
   const [tagInput, setTagInput] = useState("");
   const [imageInput, setImageInput] = useState("");
   const [slotColors, setSlotColors] = useState(
-    Array(4).fill({ hex: "#000000", name: "" })
+    Array(4).fill({ hex: "#000000", name: "", stock: 0 })
   );
 
   // Cropper state
@@ -191,12 +191,12 @@ export default function ProductFormModal({
   const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
   const [isUploading, setIsUploading] = useState(false);
 
-  const updateSlotColor = (index: number, key: "hex" | "name", value: string) => {
+  const updateSlotColor = (index: number, key: "hex" | "name" | "stock", value: string | number) => {
     setSlotColors((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [key]: value };
       if (key === "hex") {
-        next[index].name = getNearestColorName(value);
+        next[index].name = getNearestColorName(value as string);
       }
       return next;
     });
@@ -206,10 +206,10 @@ export default function ProductFormModal({
     if (product) {
       setForm({ ...product });
       if (product.colorVariants && product.colorVariants.length > 0) {
-        const newSlots = Array(4).fill({ hex: "#000000", name: "" });
+        const newSlots = Array(4).fill({ hex: "#000000", name: "", stock: 0 });
         product.colorVariants.forEach((c, i) => {
           if (i < 4) {
-            newSlots[i] = { hex: c.hex, name: c.name };
+            newSlots[i] = { hex: c.hex, name: c.name, stock: c.stock || 0 };
           }
         });
         setSlotColors(newSlots);
@@ -286,7 +286,7 @@ export default function ProductFormModal({
           else if (i <= 3) imageUrl = finalForm.images?.[i-1] || "";
           
           const finalColorName = c.name || getNearestColorName(c.hex) || "Default";
-          return { name: finalColorName, hex: c.hex, image: imageUrl };
+          return { name: finalColorName, hex: c.hex, image: imageUrl, stock: c.stock || 0 };
         })
         .filter(c => c.image && c.image.trim() !== "");
 
@@ -446,7 +446,7 @@ export default function ProductFormModal({
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Price ($) *</label>
                   <input type="number" className={inputClass("price")} placeholder="0" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
@@ -455,11 +455,6 @@ export default function ProductFormModal({
                 <div>
                   <label className={labelClass}>Original Price ($)</label>
                   <input type="number" className={inputClass()} placeholder="0" value={form.originalPrice || ""} onChange={(e) => updateField("originalPrice", Number(e.target.value) || undefined)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Stock *</label>
-                  <input type="number" className={inputClass("stock")} placeholder="0" value={form.stock ?? ""} onChange={(e) => updateField("stock", Number(e.target.value))} />
-                  {errors.stock && <p className="text-xs text-red-500 mt-1">{errors.stock}</p>}
                 </div>
               </div>
 
@@ -519,6 +514,12 @@ export default function ProductFormModal({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
+                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[0].stock || ""} onChange={(e) => updateSlotColor(0, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
+                      </div>
+                    </div>
                   </div>
                   
                   {/* Image 2 */}
@@ -563,9 +564,13 @@ export default function ProductFormModal({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
+                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[1].stock || ""} onChange={(e) => updateSlotColor(1, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Image 3 */}
                   <div className="flex flex-col gap-2">
                     <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
                       {form.images?.[1] ? (
@@ -607,9 +612,13 @@ export default function ProductFormModal({
                         <Trash2 size={14} />
                       </button>
                     </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
+                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[2].stock || ""} onChange={(e) => updateSlotColor(2, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Image 4 */}
                   <div className="flex flex-col gap-2">
                     <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
                       {form.images?.[2] ? (
@@ -650,6 +659,12 @@ export default function ProductFormModal({
                       }}>
                         <Trash2 size={14} />
                       </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
+                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[3].stock || ""} onChange={(e) => updateSlotColor(3, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -25,7 +25,7 @@ export interface ApiProduct {
   description: string;
   fabric: string;
   color: string;
-  colorVariants: { name: string; hex: string; image: string }[];
+  colorVariants: { name: string; hex: string; image: string; stock: number }[];
   inStock: boolean;
   stock: number;
   sizes: string[];

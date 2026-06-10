@@ -54,22 +54,46 @@ router.post("/", protect, async (req, res) => {
       }
 
       const quantity = item.quantity || 1;
-      console.log(
-        `Current stock: ${product.stock}, Ordered quantity: ${quantity}`,
-      );
-      if (product.stock < quantity) {
-        console.log("Out of stock");
-        return res
-          .status(400)
-          .json({ message: `Out of stock for product: ${item.name}` });
+      const selectedColor = item.selectedColor;
+
+      // Per-color stock management
+      if (product.colorVariants && product.colorVariants.length > 0 && selectedColor) {
+        const variant = product.colorVariants.find(
+          (cv) => cv.name.toLowerCase() === selectedColor.toLowerCase()
+        );
+        if (!variant) {
+          return res
+            .status(400)
+            .json({ message: `Color "${selectedColor}" not found for product: ${item.name}` });
+        }
+        console.log(
+          `Color "${selectedColor}" stock: ${variant.stock}, Ordered quantity: ${quantity}`
+        );
+        if (variant.stock < quantity) {
+          return res
+            .status(400)
+            .json({ message: `Out of stock for ${item.name} in color ${selectedColor}` });
+        }
+        variant.stock -= quantity;
+      } else {
+        // Fallback: product-level stock (no color variants)
+        console.log(
+          `Current stock: ${product.stock}, Ordered quantity: ${quantity}`
+        );
+        if (product.stock < quantity) {
+          console.log("Out of stock");
+          return res
+            .status(400)
+            .json({ message: `Out of stock for product: ${item.name}` });
+        }
+        product.stock -= quantity;
+        if (product.stock <= 0) {
+          product.stock = 0;
+          product.inStock = false;
+        }
       }
 
-      product.stock -= quantity;
-      if (product.stock <= 0) {
-        product.stock = 0;
-        product.inStock = false;
-      }
-      console.log(`Saving product with new stock: ${product.stock}`);
+      console.log(`Saving product with updated stock`);
       await product.save();
     }
 

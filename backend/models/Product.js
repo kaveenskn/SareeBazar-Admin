@@ -5,6 +5,7 @@ const colorVariantSchema = new mongoose.Schema(
     name: { type: String, required: true },
     hex: { type: String, required: true },
     image: { type: String, required: true },
+    stock: { type: Number, default: 0, min: 0 },
   },
   { _id: false }
 );
@@ -43,6 +44,14 @@ const productSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Pre-save hook: auto-compute total stock from color variants
+productSchema.pre("save", function () {
+  if (this.colorVariants && this.colorVariants.length > 0) {
+    this.stock = this.colorVariants.reduce((sum, cv) => sum + (cv.stock || 0), 0);
+    this.inStock = this.stock > 0;
+  }
+});
 
 // Pre-save hook: auto-compute sale price
 productSchema.pre("save", function () {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Search, Package, Boxes, AlertTriangle, TrendingDown,
-  DollarSign, Loader2, ChevronLeft, ChevronRight,
+  DollarSign, Loader2, ChevronLeft, ChevronRight, ChevronDown,
   Pencil, CheckSquare, Square, Layers, Box,
   ArrowUpDown, ArrowUp, ArrowDown, RefreshCw,
 } from "lucide-react";
@@ -13,6 +13,76 @@ import StockUpdateModal from "./components/StockUpdateModal";
 import BulkStockModal from "./components/BulkStockModal";
 
 const ITEMS_PER_PAGE = 10;
+
+/* ── Color Stock Dropdown for Inventory ── */
+function InventoryColorDropdown({ item, stockBadgeFn }: { item: InventoryItem; stockBadgeFn: (stock: number) => React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const hasVariants = item.colorVariants && item.colorVariants.length > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  if (!hasVariants) {
+    return <>{stockBadgeFn(item.stock)}</>;
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 cursor-pointer group"
+      >
+        {stockBadgeFn(item.stock)}
+        <ChevronDown
+          size={14}
+          className={`text-gray-400 group-hover:text-gray-600 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 z-30 bg-white border border-gray-200 rounded-xl shadow-lg p-3 min-w-[220px] animate-[scaleIn_0.15s_ease-out]">
+          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+            Stock by Color
+          </div>
+          <div className="space-y-1.5">
+            {item.colorVariants!.map((cv) => (
+              <div key={cv.name} className="flex items-center gap-2.5 px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                <div
+                  className="w-4 h-4 rounded-full border border-gray-200 shrink-0 shadow-sm"
+                  style={{ backgroundColor: cv.hex }}
+                />
+                <span className="text-xs font-medium text-gray-700 flex-1 truncate">
+                  {cv.name}
+                </span>
+                <span
+                  className={`text-xs font-bold tabular-nums ${
+                    cv.stock === 0
+                      ? "text-red-500"
+                      : cv.stock <= 5
+                        ? "text-amber-600"
+                        : "text-green-600"
+                  }`}
+                >
+                  {cv.stock}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between px-1">
+            <span className="text-[10px] text-gray-400 font-medium">Total</span>
+            <span className="text-xs font-bold text-gray-900">{item.stock}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -257,7 +327,7 @@ export default function InventoryPage() {
 
       {/* Table */}
       {!loading && (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm shadow-gray-100/50">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm shadow-gray-100/50">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#fafafc] border-b border-gray-100">
@@ -362,7 +432,9 @@ export default function InventoryPage() {
                       </button>
                     )}
                   </td>
-                  <td className="py-4 px-4">{stockBadge(item.stock)}</td>
+                  <td className="py-4 px-4">
+                    <InventoryColorDropdown item={item} stockBadgeFn={stockBadge} />
+                  </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-end">
                       <button

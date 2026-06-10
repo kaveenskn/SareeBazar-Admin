@@ -16,6 +16,7 @@ export interface InventoryItem {
   originalPrice?: number;
   badge?: string;
   fabric?: string;
+  colorVariants?: { name: string; hex: string; image: string; stock: number }[];
   createdAt: string;
   updatedAt: string;
 }

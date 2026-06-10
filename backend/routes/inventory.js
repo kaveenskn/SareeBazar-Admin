@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {
     sortObj[sort] = order === "asc" ? 1 : -1;
 
     const products = await Product.find(filter)
-      .select("name slug image category stock inStock price originalPrice badge fabric createdAt updatedAt")
+      .select("name slug image category stock inStock price originalPrice badge fabric colorVariants createdAt updatedAt")
       .sort(sortObj);
 
     res.json(products);
@@ -121,22 +121,34 @@ router.get("/summary", async (req, res) => {
  * ────────────────────────────────────────── */
 router.patch("/:id/stock", async (req, res) => {
   try {
-    const { stock } = req.body;
+    const { stock, colorName } = req.body;
 
     if (stock === undefined || stock === null || stock < 0) {
       return res.status(400).json({ message: "Valid stock value is required (>= 0)" });
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      { stock: parseInt(stock), inStock: parseInt(stock) > 0 },
-      { new: true, runValidators: true }
-    );
-
+    const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    if (colorName && product.colorVariants && product.colorVariants.length > 0) {
+      // Update specific color variant stock
+      const variant = product.colorVariants.find(
+        (cv) => cv.name.toLowerCase() === colorName.toLowerCase()
+      );
+      if (!variant) {
+        return res.status(404).json({ message: `Color "${colorName}" not found` });
+      }
+      variant.stock = parseInt(stock);
+      // Total stock and inStock are auto-computed by pre-save hook
+    } else {
+      // Update product-level stock (no color variants)
+      product.stock = parseInt(stock);
+      product.inStock = parseInt(stock) > 0;
+    }
+
+    await product.save();
     res.json(product);
   } catch (err) {
     console.error("PATCH /api/inventory/:id/stock error:", err);

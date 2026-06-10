@@ -8,6 +8,7 @@ export interface ColorVariant {
   name: string;
   hex: string;
   image: string;
+  stock: number;
 }
 
 export interface Product {
