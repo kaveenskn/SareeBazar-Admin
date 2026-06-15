@@ -137,9 +137,9 @@ export default function ProductFormModal({
   const [specVal, setSpecVal] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [imageInput, setImageInput] = useState("");
-  const [slotColors, setSlotColors] = useState(
-    Array(4).fill({ hex: "#000000", name: "", stock: 0 })
-  );
+  const [slotColors, setSlotColors] = useState<{ hex: string; name: string; stock: number }[]>([
+    { hex: "#000000", name: "", stock: 0 }
+  ]);
 
   // Cropper state
   const [showCropModal, setShowCropModal] = useState(false);
@@ -196,22 +196,82 @@ export default function ProductFormModal({
       const next = [...prev];
       next[index] = { ...next[index], [key]: value };
       if (key === "hex") {
-        next[index].name = getNearestColorName(value as string);
+        // Only auto-fill name if the user hasn't typed one yet
+        if (!next[index].name || next[index].name.trim() === "") {
+          next[index].name = getNearestColorName(value as string);
+        }
+      }
+      if (key === "name") {
+        // Check if the typed name matches a known color — auto-set hex
+        const match = BASIC_COLORS.find(c => c.name.toLowerCase() === (value as string).toLowerCase());
+        if (match) {
+          next[index].hex = match.hex;
+        }
       }
       return next;
     });
+  };
+
+  const addSlot = () => {
+    setSlotColors(prev => [...prev, { hex: "#000000", name: "", stock: 0 }]);
+  };
+
+  const removeSlot = (index: number) => {
+    if (slotColors.length <= 1) return; // Keep at least 1
+    setSlotColors(prev => prev.filter((_, i) => i !== index));
+    // Also remove corresponding image
+    if (index === 0) {
+      // Shift images[0] to become the new main image
+      const nextMainImage = form.images?.[0] || "";
+      updateField("image", nextMainImage);
+      const newImages = (form.images || []).slice(1);
+      updateField("images", newImages);
+      // Shift filesToUpload keys
+      setFilesToUpload(prev => {
+        const next: Record<string, File> = {};
+        if (prev["images[0]"]) next["image"] = prev["images[0]"];
+        Object.entries(prev).forEach(([k, v]) => {
+          const m = k.match(/^images\[(\d+)\]$/);
+          if (m) {
+            const i = parseInt(m[1]);
+            if (i > 0) next[`images[${i - 1}]`] = v;
+          } else if (k !== "image" && k !== "images[0]") {
+            next[k] = v;
+          }
+        });
+        return next;
+      });
+    } else {
+      const imgIdx = index - 1;
+      const newImages = [...(form.images || [])];
+      newImages.splice(imgIdx, 1);
+      updateField("images", newImages);
+      // Remove and re-key filesToUpload
+      setFilesToUpload(prev => {
+        const next: Record<string, File> = {};
+        Object.entries(prev).forEach(([k, v]) => {
+          const m = k.match(/^images\[(\d+)\]$/);
+          if (m) {
+            const i = parseInt(m[1]);
+            if (i < imgIdx) next[k] = v;
+            else if (i > imgIdx) next[`images[${i - 1}]`] = v;
+            // skip i === imgIdx (removed)
+          } else {
+            next[k] = v;
+          }
+        });
+        return next;
+      });
+    }
   };
 
   useEffect(() => {
     if (product) {
       setForm({ ...product });
       if (product.colorVariants && product.colorVariants.length > 0) {
-        const newSlots = Array(4).fill({ hex: "#000000", name: "", stock: 0 });
-        product.colorVariants.forEach((c, i) => {
-          if (i < 4) {
-            newSlots[i] = { hex: c.hex, name: c.name, stock: c.stock || 0 };
-          }
-        });
+        const newSlots = product.colorVariants.map(c => ({
+          hex: c.hex, name: c.name, stock: c.stock || 0
+        }));
         setSlotColors(newSlots);
       }
     }
@@ -283,9 +343,9 @@ export default function ProductFormModal({
         .map((c, i) => {
           let imageUrl = "";
           if (i === 0) imageUrl = finalForm.image;
-          else if (i <= 3) imageUrl = finalForm.images?.[i-1] || "";
+          else imageUrl = finalForm.images?.[i-1] || "";
           
-          const finalColorName = c.name || getNearestColorName(c.hex) || "Default";
+          const finalColorName = c.name.trim() || getNearestColorName(c.hex) || "Default";
           return { name: finalColorName, hex: c.hex, image: imageUrl, stock: c.stock || 0 };
         })
         .filter(c => c.image && c.image.trim() !== "");
@@ -448,15 +508,34 @@ export default function ProductFormModal({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Price ($) *</label>
+                  <label className={labelClass}>Selling Price (₹) *</label>
                   <input type="number" className={inputClass("price")} placeholder="0" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
                   {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
                 </div>
                 <div>
-                  <label className={labelClass}>Original Price ($)</label>
+                  <label className={labelClass}>Cost Price (₹) <span className="text-gray-400 font-normal text-[10px]">Admin only</span></label>
                   <input type="number" className={inputClass()} placeholder="0" value={form.originalPrice || ""} onChange={(e) => updateField("originalPrice", Number(e.target.value) || undefined)} />
                 </div>
               </div>
+              {/* Profit Margin Display */}
+              {form.price > 0 && (form.originalPrice ?? 0) > 0 && (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                    <span className="text-emerald-600 text-sm font-bold">₹</span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-xs text-gray-500">Profit per saree</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-sm font-bold ${(form.price - (form.originalPrice ?? 0)) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                        ₹{(form.price - (form.originalPrice ?? 0)).toFixed(2)}
+                      </span>
+                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${(form.price - (form.originalPrice ?? 0)) >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        {((form.price - (form.originalPrice ?? 0)) / form.price * 100).toFixed(1)}% margin
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className={labelClass}>Description</label>
@@ -469,203 +548,113 @@ export default function ProductFormModal({
             <div className="space-y-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Image URLs</h3>
-                  <span className="text-xs font-medium text-[#a1005b] bg-[#fdf2f8] px-2 py-1 rounded-md">Min 2</span>
+                  <h3 className="text-sm font-semibold text-gray-900">Saree Images</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-[#a1005b] bg-[#fdf2f8] px-2 py-1 rounded-md">Min 2</span>
+                    <span className="text-xs text-gray-400">{slotColors.length} added</span>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-4 gap-4">
-                  {/* Image 1 */}
-                  <div className="flex flex-col gap-2">
-                    <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                      {form.image ? (
-                        <>
-                          <img src={form.image} alt="Main" className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Upload className="text-white" size={24} />
+                  {slotColors.map((slot, slotIdx) => {
+                    const isMain = slotIdx === 0;
+                    const imgIdx = slotIdx - 1; // index in form.images[]
+                    const currentImage = isMain ? form.image : form.images?.[imgIdx];
+                    const cropField = isMain ? "image" : `images[${imgIdx}]`;
+                    const slotLabel = isMain ? "Main Image *" : `Image ${slotIdx + 1}${slotIdx === 1 ? " *" : ""}`;
+
+                    return (
+                      <div key={slotIdx} className="flex flex-col gap-2">
+                        <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                          {currentImage ? (
+                            <>
+                              <img src={currentImage} alt={slotLabel} className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <Upload className="text-white" size={24} />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <ImageIcon className="text-gray-400 mb-1 z-10" size={20} />
+                              <span className="text-xs text-gray-400 font-medium z-10">{slotLabel}</span>
+                            </>
+                          )}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setImageToCrop(URL.createObjectURL(file));
+                              setCurrentCropField(cropField);
+                              setShowCropModal(true);
+                              e.target.value = "";
+                            }
+                          }} />
+                        </label>
+                        {/* Color Name + Color Picker */}
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                            <input
+                              type="text"
+                              className="w-full text-xs px-2 py-1.5 outline-none bg-transparent min-w-0"
+                              placeholder={getNearestColorName(slot.hex) || "Color Name"}
+                              value={slot.name}
+                              onChange={(e) => updateSlotColor(slotIdx, "name", e.target.value)}
+                            />
+                            <div className="shrink-0 pr-1.5 flex items-center">
+                              <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slot.hex} onChange={(e) => updateSlotColor(slotIdx, "hex", e.target.value)} />
+                            </div>
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="text-gray-400 mb-1 z-10" size={20} />
-                          <span className="text-xs text-gray-400 font-medium z-10">Main Image *</span>
-                        </>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setImageToCrop(URL.createObjectURL(file));
-                          setCurrentCropField("image");
-                          setShowCropModal(true);
-                          e.target.value = "";
-                        } 
-                      }} />
-                    </label>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <input type="text" className="w-full text-xs px-2 py-1.5 outline-none bg-transparent min-w-0" placeholder="Color Name" value={slotColors[0].name} onChange={(e) => updateSlotColor(0, "name", e.target.value)} />
-                        <div className="shrink-0 pr-1.5 flex items-center">
-                          <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[0].hex} onChange={(e) => updateSlotColor(0, "hex", e.target.value)} />
+                          {slotColors.length > 1 && (
+                            <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" title="Remove this saree slot" onClick={() => removeSlot(slotIdx)}>
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                        {/* Hex Code Input */}
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                            <span className="text-[10px] text-gray-400 pl-2 shrink-0">#</span>
+                            <input
+                              type="text"
+                              className="w-full text-xs px-1 py-1.5 outline-none bg-transparent min-w-0 font-mono"
+                              placeholder="ff0000"
+                              value={slot.hex.replace(/^#/, "")}
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/[^a-fA-F0-9]/g, "").slice(0, 6);
+                                if (val.length <= 6) {
+                                  const hex = `#${val.padEnd(6, "0")}`;
+                                  updateSlotColor(slotIdx, "hex", hex);
+                                }
+                              }}
+                            />
+                            <div className="shrink-0 pr-1.5 flex items-center">
+                              <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: slot.hex }} />
+                            </div>
+                          </div>
+                        </div>
+                        {/* Stock Input */}
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
+                            <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
+                            <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slot.stock || ""} onChange={(e) => updateSlotColor(slotIdx, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
+                          </div>
                         </div>
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => {
-                        updateField("image", "");
-                        setFilesToUpload(prev => { const next = {...prev}; delete next.image; return next; });
-                      }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
-                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[0].stock || ""} onChange={(e) => updateSlotColor(0, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Image 2 */}
+                    );
+                  })}
+
+                  {/* Add Saree Button */}
                   <div className="flex flex-col gap-2">
-                    <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                      {form.images?.[0] ? (
-                        <>
-                          <img src={form.images[0]} alt="Image 2" className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Upload className="text-white" size={24} />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="text-gray-400 mb-1 z-10" size={20} />
-                          <span className="text-xs text-gray-400 font-medium z-10">Image 2 *</span>
-                        </>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setImageToCrop(URL.createObjectURL(file));
-                          setCurrentCropField("images[0]");
-                          setShowCropModal(true);
-                          e.target.value = "";
-                        } 
-                      }} />
-                    </label>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <input type="text" className="w-full text-xs px-2 py-1.5 outline-none bg-transparent min-w-0" placeholder="Color Name" value={slotColors[1].name} onChange={(e) => updateSlotColor(1, "name", e.target.value)} />
-                        <div className="shrink-0 pr-1.5 flex items-center">
-                          <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[1].hex} onChange={(e) => updateSlotColor(1, "hex", e.target.value)} />
-                        </div>
+                    <button
+                      type="button"
+                      onClick={addSlot}
+                      className="group aspect-square bg-gradient-to-br from-[#fdf2f8] to-[#fce7f3] border-2 border-dashed border-[#d93097]/30 rounded-xl flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-[#d93097] hover:from-[#fce7f3] hover:to-[#fbcfe8] transition-all duration-200"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#d93097]/10 flex items-center justify-center mb-2 group-hover:bg-[#d93097]/20 group-hover:scale-110 transition-all duration-200">
+                        <Plus size={20} className="text-[#d93097]" />
                       </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
-                        const newImages = [...(form.images || [])]; 
-                        newImages[0] = ""; 
-                        updateField("images", newImages); 
-                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[0]"]; return next; });
-                      }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
-                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[1].stock || ""} onChange={(e) => updateSlotColor(1, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                      {form.images?.[1] ? (
-                        <>
-                          <img src={form.images[1]} alt="Image 3" className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Upload className="text-white" size={24} />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="text-gray-400 mb-1 z-10" size={20} />
-                          <span className="text-xs text-gray-400 font-medium z-10">Image 3</span>
-                        </>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setImageToCrop(URL.createObjectURL(file));
-                          setCurrentCropField("images[1]");
-                          setShowCropModal(true);
-                          e.target.value = "";
-                        } 
-                      }} />
-                    </label>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <input type="text" className="w-full text-xs px-2 py-1.5 outline-none bg-transparent min-w-0" placeholder="Color Name" value={slotColors[2].name} onChange={(e) => updateSlotColor(2, "name", e.target.value)} />
-                        <div className="shrink-0 pr-1.5 flex items-center">
-                          <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[2].hex} onChange={(e) => updateSlotColor(2, "hex", e.target.value)} />
-                        </div>
-                      </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
-                        const newImages = [...(form.images || [])]; 
-                        newImages[1] = ""; 
-                        updateField("images", newImages); 
-                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[1]"]; return next; });
-                      }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
-                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[2].stock || ""} onChange={(e) => updateSlotColor(2, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="group aspect-square bg-gray-50 border border-dashed border-gray-200 rounded-xl overflow-hidden relative flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                      {form.images?.[2] ? (
-                        <>
-                          <img src={form.images[2]} alt="Image 4" className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Upload className="text-white" size={24} />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="text-gray-400 mb-1 z-10" size={20} />
-                          <span className="text-xs text-gray-400 font-medium z-10">Image 4</span>
-                        </>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { 
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setImageToCrop(URL.createObjectURL(file));
-                          setCurrentCropField("images[2]");
-                          setShowCropModal(true);
-                          e.target.value = "";
-                        } 
-                      }} />
-                    </label>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <input type="text" className="w-full text-xs px-2 py-1.5 outline-none bg-transparent min-w-0" placeholder="Color Name" value={slotColors[3].name} onChange={(e) => updateSlotColor(3, "name", e.target.value)} />
-                        <div className="shrink-0 pr-1.5 flex items-center">
-                          <input type="color" className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" value={slotColors[3].hex} onChange={(e) => updateSlotColor(3, "hex", e.target.value)} />
-                        </div>
-                      </div>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-md shrink-0" onClick={() => { 
-                        const newImages = [...(form.images || [])]; 
-                        newImages[2] = ""; 
-                        updateField("images", newImages); 
-                        setFilesToUpload(prev => { const next = {...prev}; delete next["images[2]"]; return next; });
-                      }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#a1005b]/10 focus-within:border-[#a1005b] transition-all">
-                        <span className="text-[10px] text-gray-400 pl-2 shrink-0">Stock</span>
-                        <input type="number" min="0" className="w-full text-xs px-1.5 py-1.5 outline-none bg-transparent min-w-0 text-right" placeholder="0" value={slotColors[3].stock || ""} onChange={(e) => updateSlotColor(3, "stock", Math.max(0, parseInt(e.target.value) || 0))} />
-                      </div>
-                    </div>
+                      <span className="text-xs font-semibold text-[#a1005b]">Add Saree</span>
+                      <span className="text-[10px] text-[#d93097]/60 mt-0.5">New color variant</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -724,7 +713,7 @@ export default function ProductFormModal({
                       // Clear sale fields when switching away from sale
                       if (newStatus !== "sale") {
                         updateField("discountPercent", undefined);
-                        updateField("originalPrice", undefined);
+                        // Note: originalPrice (cost price) is NOT cleared — it's independent of sale status
                       }
                     }}
                   >
@@ -753,15 +742,26 @@ export default function ProductFormModal({
                     />
                   </div>
                   {form.discountPercent && form.price > 0 && (
-                    <div className="flex items-center gap-3 pt-2 border-t border-red-100">
-                      <span className="text-sm text-gray-500">Offer Price Preview:</span>
-                      <span className="text-sm text-gray-400 line-through">${form.price}</span>
-                      <span className="text-lg font-bold text-red-600">
-                        ${Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100}
-                      </span>
-                      <span className="text-xs font-medium text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
-                        {form.discountPercent}% OFF
-                      </span>
+                    <div className="pt-2 border-t border-red-100 space-y-2">
+                      <span className="text-xs text-gray-400 font-medium">Customer will see:</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-400 line-through">₹{form.price}</span>
+                        <span className="text-lg font-bold text-red-600">
+                          ₹{Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100}
+                        </span>
+                        <span className="text-xs font-medium text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
+                          {form.discountPercent}% OFF
+                        </span>
+                      </div>
+                      {(form.originalPrice ?? 0) > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <span>Sale profit:</span>
+                          <span className="font-semibold text-emerald-600">
+                            ₹{(Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100 - (form.originalPrice ?? 0)).toFixed(2)}
+                          </span>
+                          <span>per saree</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

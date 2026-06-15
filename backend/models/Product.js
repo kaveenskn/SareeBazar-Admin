@@ -53,24 +53,10 @@ productSchema.pre("save", function () {
   }
 });
 
-// Pre-save hook: auto-compute sale price
-productSchema.pre("save", function () {
-  if (this.status === "sale" && this.discountPercent > 0) {
-    // If originalPrice is not already set, the entered price IS the MRP
-    if (!this.originalPrice || this.isModified("discountPercent") || this.isModified("price")) {
-      // Only set originalPrice from price when first setting up the sale
-      // or when price was explicitly changed (not from our own computation)
-      if (!this.originalPrice || this.isModified("price")) {
-        this.originalPrice = this.price;
-      }
-      this.price = Math.round(this.originalPrice * (1 - this.discountPercent / 100) * 100) / 100;
-    }
-  } else if (this.status !== "sale") {
-    // Clear sale-related fields when not a sale product
-    this.originalPrice = null;
-    this.discountPercent = null;
-  }
-});
+// Note: Sale price is computed on the frontend as: price * (1 - discountPercent/100)
+// price = selling price (always stays unchanged)
+// originalPrice = cost price (admin-only, for profit tracking)
+// discountPercent = sale discount percentage (only when status === "sale")
 
 // Virtual id field for frontend compatibility
 productSchema.virtual("id").get(function () {

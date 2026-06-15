@@ -433,13 +433,13 @@ export default function ProductsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex flex-col">
-                      {product.status === "sale" && product.originalPrice ? (
+                      {product.status === "sale" && product.discountPercent ? (
                         <>
-                          <span className="text-sm font-semibold text-gray-900">${product.price}</span>
-                          <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>
+                          <span className="text-sm font-semibold text-gray-900">₹{Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
+                          <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
                         </>
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900">${product.price}</span>
+                        <span className="text-sm font-semibold text-gray-900">₹{product.price}</span>
                       )}
                     </div>
                   </td>
@@ -522,8 +522,14 @@ export default function ProductsPage() {
                 <p className="text-xs text-gray-500 mt-0.5">{product.category} · {product.fabric || "—"}</p>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-lg font-bold text-gray-900">${product.price}</span>
-                    {product.status === "sale" && product.originalPrice && <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>}
+                    {product.status === "sale" && product.discountPercent ? (
+                      <>
+                        <span className="text-lg font-bold text-gray-900">₹{Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
+                        <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold text-gray-900">₹{product.price}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Star size={12} className="text-amber-400 fill-amber-400" />
