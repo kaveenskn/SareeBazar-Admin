@@ -39,12 +39,13 @@ export async function fetchInventorySummary(): Promise<InventoryStats> {
 
 export async function updateStock(
   id: string,
-  stock: number
+  data: { stock?: number; colorName?: string; variants?: { colorName: string; stock: number }[] }
 ): Promise<InventoryItem> {
+  const payload = typeof data === "number" ? { stock: data } : data;
   const res = await fetch(`${API_BASE}/inventory/${id}/stock`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ stock }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "Unknown error" }));
