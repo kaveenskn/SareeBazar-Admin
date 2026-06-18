@@ -106,17 +106,16 @@ router.post("/", protect, async (req, res) => {
       paymentMethod.toLowerCase() === "cash on delivery" ||
       paymentMethod.toLowerCase() === "cod"
     ) {
+      // Cash on delivery — payment not yet made
       resolvedPaymentStatus = "cod";
-    } else if (paymentId) {
-      // If a paymentId is provided, the payment gateway confirmed it
+    } else {
+      // Card / online payment — treat as paid (mock payment flow has no real gateway ID)
       resolvedPaymentStatus = "paid";
     }
 
     // Set order status based on payment
-    const orderStatus =
-      resolvedPaymentStatus === "paid" || resolvedPaymentStatus === "cod"
-        ? "confirmed"
-        : "pending";
+    // Card (paid) → confirmed immediately; COD → pending until delivery
+    const orderStatus = resolvedPaymentStatus === "paid" ? "confirmed" : "pending";
 
     const order = await Order.create({
       user: req.userId,

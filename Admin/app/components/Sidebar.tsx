@@ -40,7 +40,6 @@ export default function Sidebar() {
     { name: "Orders", icon: Box, href: "/orders" },
     { name: "Customers", icon: Users, href: "/customers" },
     { name: "Reviews", icon: Star, href: "/reviews" },
-    { name: "Offers & Promotions", icon: Tag, href: "/offers" },
     { name: "Inventory", icon: Boxes, href: "/inventory" },
     { name: "Settings", icon: Settings, href: "/settings" },
   ];
@@ -68,8 +67,8 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                  ? "bg-[#a1005b] text-white font-medium shadow-md shadow-[#a1005b]/20"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-[#a1005b] text-white font-medium shadow-md shadow-[#a1005b]/20"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
             >
               <item.icon size={20} className={isActive ? "text-white" : "text-gray-400"} />

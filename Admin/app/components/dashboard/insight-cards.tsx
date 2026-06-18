@@ -1,12 +1,35 @@
+"use client";
+
 import { Crown, Heart, Palette, Sparkles } from "lucide-react";
-import { insightCards } from "@/app/lib/mock-data";
+import { useDashboard } from "./dashboard-provider";
 
 const iconMap = { Crown, Heart, Palette, Sparkles } as const;
 
 export default function InsightCards() {
+  const { data, loading } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-pink-50" />
+              <div className="h-3 w-24 rounded bg-gray-100" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="h-5 w-32 rounded bg-gray-100" />
+              <div className="h-3 w-24 rounded bg-gray-50" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      {insightCards.map((card) => {
+      {data.insightCards.map((card) => {
         const Icon = iconMap[card.icon as keyof typeof iconMap];
         return (
           <div
