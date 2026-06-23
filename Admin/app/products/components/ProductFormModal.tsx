@@ -550,8 +550,7 @@ export default function ProductFormModal({
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">Saree Images</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-[#a1005b] bg-[#fdf2f8] px-2 py-1 rounded-md">Min 2</span>
-                    <span className="text-xs text-gray-400">{slotColors.length} added</span>
+                    <span className="text-xs text-gray-400">{slotColors.length} {slotColors.length === 1 ? 'image' : 'images'} added</span>
                   </div>
                 </div>
                 
@@ -561,7 +560,7 @@ export default function ProductFormModal({
                     const imgIdx = slotIdx - 1; // index in form.images[]
                     const currentImage = isMain ? form.image : form.images?.[imgIdx];
                     const cropField = isMain ? "image" : `images[${imgIdx}]`;
-                    const slotLabel = isMain ? "Main Image *" : `Image ${slotIdx + 1}${slotIdx === 1 ? " *" : ""}`;
+                    const slotLabel = isMain ? "Main Image *" : `Image ${slotIdx + 1}`;
 
                     return (
                       <div key={slotIdx} className="flex flex-col gap-2">

@@ -19,7 +19,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/orders";
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders`;
 
 /* ─── Types ─── */
 interface OrderItem {
