@@ -3,9 +3,27 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const User = require("./models/User");
 
 dotenv.config();
-connectDB();
+connectDB().then(async () => {
+  // Seed Admin user if ADMIN_EMAIL is provided
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    try {
+      const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
+      if (!adminExists) {
+        await User.create({
+          name: "Super Admin",
+          email: process.env.ADMIN_EMAIL,
+          password: process.env.ADMIN_PASSWORD,
+        });
+        console.log("✅ Default admin user seeded");
+      }
+    } catch (err) {
+      console.error("❌ Failed to seed admin user:", err.message);
+    }
+  }
+});
 
 const app = express();
 

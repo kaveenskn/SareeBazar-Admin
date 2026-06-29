@@ -80,13 +80,18 @@ export default function SettingsPage() {
   const [gateways, setGateways] = useState(initialPaymentGateways);
   const [shopInfo, setShopInfo] = useState<ShopInfo>(defaultShopInfo);
   const [originalShopInfo, setOriginalShopInfo] = useState<ShopInfo>(defaultShopInfo);
+  
+  // Admin Profile States
+  const [adminProfile, setAdminProfile] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [originalAdminProfile, setOriginalAdminProfile] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // Fetch shop info on mount
+  // Fetch shop info and admin profile on mount
   useEffect(() => {
-    fetchShopInfo();
+    fetchData();
   }, []);
 
   // Auto-dismiss toast
@@ -97,36 +102,50 @@ export default function SettingsPage() {
     }
   }, [toast]);
 
-  const fetchShopInfo = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/backend/shop-info");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      const info: ShopInfo = {
-        storeName: data.storeName || "",
-        supportEmail: data.supportEmail || "",
-        phone: data.phone || "",
-        address: data.address || "",
-        openingHours: data.openingHours || "",
-        tagline: data.tagline || "",
-        description: data.description || "",
-        socialLinks: {
-          instagram: data.socialLinks?.instagram || "",
-          facebook: data.socialLinks?.facebook || "",
-          twitter: data.socialLinks?.twitter || "",
-          youtube: data.socialLinks?.youtube || "",
-        },
-        shippingCosts: {
-          cardPayment: data.shippingCosts?.cardPayment ?? 0,
-          cashOnDelivery: data.shippingCosts?.cashOnDelivery ?? 0,
-        },
-      };
-      setShopInfo(info);
-      setOriginalShopInfo(info);
+      if (res.ok) {
+        const data = await res.json();
+        const info: ShopInfo = {
+          storeName: data.storeName || "",
+          supportEmail: data.supportEmail || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          openingHours: data.openingHours || "",
+          tagline: data.tagline || "",
+          description: data.description || "",
+          socialLinks: {
+            instagram: data.socialLinks?.instagram || "",
+            facebook: data.socialLinks?.facebook || "",
+            twitter: data.socialLinks?.twitter || "",
+            youtube: data.socialLinks?.youtube || "",
+          },
+          shippingCosts: {
+            cardPayment: data.shippingCosts?.cardPayment ?? 0,
+            cashOnDelivery: data.shippingCosts?.cashOnDelivery ?? 0,
+          },
+        };
+        setShopInfo(info);
+        setOriginalShopInfo(info);
+      }
+
+      // Fetch admin profile
+      const userRes = await fetch("/api/backend/auth/me", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        }
+      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        const profile = { name: userData.user.name, email: userData.user.email, password: "", confirmPassword: "" };
+        setAdminProfile(profile);
+        setOriginalAdminProfile(profile);
+      }
     } catch (error) {
-      console.error("Error fetching shop info:", error);
-      setToast({ type: "error", message: "Failed to load shop info" });
+      console.error("Error fetching data:", error);
+      setToast({ type: "error", message: "Failed to load settings data" });
     } finally {
       setLoading(false);
     }
@@ -172,11 +191,70 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDiscard = () => {
-    setShopInfo({ ...originalShopInfo });
+  const handleAdminProfileSave = async () => {
+    if (adminProfile.password && adminProfile.password !== adminProfile.confirmPassword) {
+      setToast({ type: "error", message: "Passwords do not match!" });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload: any = { 
+        name: adminProfile.name, 
+        email: adminProfile.email 
+      };
+      if (adminProfile.password) {
+        payload.password = adminProfile.password;
+      }
+      
+      const res = await fetch("/api/backend/user/profile", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token")}`
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!res.ok) throw new Error("Failed to save profile");
+      const data = await res.json();
+      
+      const updatedProfile = { 
+        name: data.user.name, 
+        email: data.user.email, 
+        password: "",
+        confirmPassword: "" // clear password after save
+      };
+      setAdminProfile(updatedProfile);
+      setOriginalAdminProfile(updatedProfile);
+      setToast({ type: "success", message: "Admin profile updated successfully!" });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setToast({ type: "error", message: "Failed to update profile" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const hasChanges = JSON.stringify(shopInfo) !== JSON.stringify(originalShopInfo);
+  const handleDiscard = () => {
+    if (activeTab === "Admins & Roles") {
+      setAdminProfile({ ...originalAdminProfile });
+    } else {
+      setShopInfo({ ...originalShopInfo });
+    }
+  };
+
+  const hasShopChanges = JSON.stringify(shopInfo) !== JSON.stringify(originalShopInfo);
+  const hasAdminChanges = JSON.stringify(adminProfile) !== JSON.stringify(originalAdminProfile);
+  const hasChanges = activeTab === "Admins & Roles" ? hasAdminChanges : hasShopChanges;
+
+  const onSave = () => {
+    if (activeTab === "Admins & Roles") {
+      handleAdminProfileSave();
+    } else {
+      handleSave();
+    }
+  };
 
   const toggleGateway = (index: number) => {
     const newGateways = [...gateways];
@@ -186,6 +264,10 @@ export default function SettingsPage() {
 
   const updateField = (field: keyof ShopInfo, value: string) => {
     setShopInfo((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateAdminField = (field: keyof typeof adminProfile, value: string) => {
+    setAdminProfile((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateSocialLink = (platform: keyof ShopInfo["socialLinks"], value: string) => {
@@ -585,7 +667,73 @@ export default function SettingsPage() {
             </>
           )}
 
-          {activeTab !== "Store" && activeTab !== "Payment" && activeTab !== "Shipping" && (
+          {activeTab === "Admins & Roles" && (
+            <>
+              <h2 className="text-2xl font-serif text-gray-900">Admin Account Settings</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage your administrator login credentials
+              </p>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 size={32} className="animate-spin text-[#a1005b]" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-6 mt-8 max-w-xl">
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={adminProfile.name}
+                      onChange={(e) => updateAdminField("name", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      Username (Email)
+                    </label>
+                    <input
+                      type="email"
+                      value={adminProfile.email}
+                      onChange={(e) => updateAdminField("email", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={adminProfile.password}
+                      onChange={(e) => updateAdminField("password", e.target.value)}
+                      placeholder="Leave blank to keep current password"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                    />
+                  </div>
+                  {adminProfile.password && (
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={adminProfile.confirmPassword}
+                        onChange={(e) => updateAdminField("confirmPassword", e.target.value)}
+                        placeholder="Confirm your new password"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a1005b]/20 focus:border-[#a1005b] transition-all"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab !== "Store" && activeTab !== "Payment" && activeTab !== "Shipping" && activeTab !== "Admins & Roles" && (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
               <p>Configuration for {activeTab} coming soon.</p>
             </div>
@@ -606,7 +754,7 @@ export default function SettingsPage() {
             Discard
           </button>
           <button
-            onClick={handleSave}
+            onClick={onSave}
             disabled={!hasChanges || saving}
             className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
               hasChanges && !saving

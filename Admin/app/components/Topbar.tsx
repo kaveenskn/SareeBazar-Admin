@@ -1,11 +1,12 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Search, Plus, MessageSquare, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, Plus, MessageSquare, Bell, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Topbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [storeName, setStoreName] = useState("SareeBazar");
 
   useEffect(() => {
@@ -51,6 +52,17 @@ export default function Topbar() {
     };
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/backend/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Error logging out", err);
+    }
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
+    router.push("/login");
+  };
+
   const { title, subtitle } = getPageInfo();
 
   return (
@@ -91,17 +103,25 @@ export default function Topbar() {
             <Bell size={18} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-[#a1005b] rounded-full border-2 border-white"></span>
           </button>
+
+          <button 
+            onClick={handleLogout}
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white text-red-500 hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition-colors"
+            title="Log out"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
 
         {/* User Profile */}
-        <div className="flex items-center gap-3 pl-2">
+        <div className="flex items-center gap-3 pl-2 border-l border-gray-100">
           <div className="flex flex-col items-end">
             <span className="text-sm font-semibold text-gray-900">
               Store Admin
             </span>
             <span className="text-[11px] text-gray-500">{storeName}</span>
           </div>
-          <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg">
+          <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg shadow-sm">
             {storeName.charAt(0)}
           </div>
         </div>
