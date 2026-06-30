@@ -182,7 +182,10 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => {
-    loadProducts();
+    const timer = setTimeout(() => {
+      loadProducts();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadProducts]);
 
   // Stats

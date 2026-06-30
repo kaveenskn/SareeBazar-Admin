@@ -11,7 +11,10 @@ export default function Topbar() {
 
   useEffect(() => {
     fetch("/api/backend/shop-info")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch shop info");
+        return res.json();
+      })
       .then(data => {
         if (data && data.storeName) {
           setStoreName(data.storeName);

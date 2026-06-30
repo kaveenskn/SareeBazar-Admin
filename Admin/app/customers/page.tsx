@@ -21,7 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/customers";
+const API_BASE = "/api/backend/customers";
 
 /* ─── Types ─── */
 interface OrderItem {
@@ -160,7 +160,8 @@ const PaymentBadge = ({ status }: { status: string }) => {
 /* ─── Customer Card ─── */
 const CustomerCard = ({ customer }: { customer: Customer }) => {
   const [expanded, setExpanded] = useState(false);
-  const initial = customer.name.charAt(0).toUpperCase();
+  const initial = customer.name ? customer.name.charAt(0).toUpperCase() : "?";
+  const customerOrders = customer.orders || [];
 
   // Avatar gradient based on tier
   const avatarGradient: Record<string, string> = {
@@ -244,7 +245,7 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
       </div>
 
       {/* ─── Expanded: Purchase History ─── */}
-      {expanded && customer.orders.length > 0 && (
+      {expanded && customerOrders.length > 0 && (
         <div className="border-t border-gray-100 px-5 pb-5">
           <div className="pt-4 pb-2 flex items-center gap-2">
             <ShoppingBag size={14} className="text-[#a1005b]" />
@@ -256,12 +257,12 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
           {/* ─── Timeline of Orders ─── */}
           <div className="relative">
             {/* Vertical connector line */}
-            {customer.orders.length > 1 && (
+            {customerOrders.length > 1 && (
               <div className="absolute left-[15px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-[#a1005b] via-[#d93097] to-gray-200 rounded-full" />
             )}
 
             <div className="flex flex-col gap-3">
-              {customer.orders.map((order, idx) => (
+              {customerOrders.map((order, idx) => (
                 <div key={order.orderId} className="relative flex gap-3">
                   {/* Timeline dot */}
                   <div className="relative z-10 mt-1.5 shrink-0">

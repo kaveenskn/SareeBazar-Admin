@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Review = require("../models/Review");
 const Product = require("../models/Product");
@@ -27,8 +28,15 @@ router.get("/product/:productId", async (req, res) => {
     const limitNum = Math.min(Math.max(parseInt(limit), 1), 50);
     const skip = (pageNum - 1) * limitNum;
 
+    let productIdObj;
+    try {
+      productIdObj = new mongoose.Types.ObjectId(req.params.productId);
+    } catch (e) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
     const filter = {
-      product: req.params.productId,
+      product: productIdObj,
       isApproved: true,
     };
 
@@ -190,6 +198,41 @@ router.delete("/:reviewId", protect, async (req, res) => {
   } catch (err) {
     console.error("DELETE /api/reviews/:reviewId error:", err);
     res.status(500).json({ message: "Failed to delete review", error: err.message });
+  }
+});
+
+/* ──────────────────────────────────────────
+ *  GET /api/reviews/check-eligibility/:productId
+ *  Check if the authenticated user can review this product
+ * ────────────────────────────────────────── */
+router.get("/check-eligibility/:productId", protect, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Check if user already reviewed this product
+    const existingReview = await Review.findOne({
+      user: req.userId,
+      product: req.params.productId,
+    });
+
+    // Check if user has a delivered order containing this product
+    const hasOrdered = await Order.findOne({
+      user: req.userId,
+      "items.slug": product.slug,
+      status: "delivered",
+    });
+
+    res.json({
+      canReview: !!hasOrdered && !existingReview,
+      hasOrdered: !!hasOrdered,
+      hasReviewed: !!existingReview,
+    });
+  } catch (err) {
+    console.error("GET /api/reviews/check-eligibility error:", err);
+    res.status(500).json({ message: "Failed to check eligibility", error: err.message });
   }
 });
 

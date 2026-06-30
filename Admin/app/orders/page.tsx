@@ -19,7 +19,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/orders";
+const API_BASE = "/api/backend/orders";
 
 /* ─── Types ─── */
 interface OrderItem {
@@ -71,7 +71,9 @@ interface OrderFromDB {
 /* ─── Helpers ─── */
 
 function formatDate(dateStr: string): string {
+  if (!dateStr) return "N/A";
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "N/A";
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
@@ -88,6 +90,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatPaymentStatus(status: string): string {
+  if (!status) return "Pending";
   const map: Record<string, string> = {
     paid: "Paid",
     cod: "COD",
@@ -95,15 +98,17 @@ function formatPaymentStatus(status: string): string {
     failed: "Failed",
     refunded: "Refunded",
   };
-  return map[status] || status;
+  return map[status.toLowerCase()] || status;
 }
 
 function formatDeliveryStatus(status: string): string {
+  if (!status) return "Pending";
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function formatCurrency(amount: number): string {
-  return `LKR ${amount.toLocaleString("en-LK")}`;
+  const val = amount || 0;
+  return `LKR ${val.toLocaleString("en-LK")}`;
 }
 
 /* ─── Badge Components ─── */
@@ -462,9 +467,10 @@ export default function OrdersPage() {
             </thead>
             <tbody>
               {filteredOrders.map((order, idx) => {
-                const totalQty = order.items.reduce((sum, item) => sum + item.quantity, 0);
-                const primaryItem = order.items[0];
-                const additionalItems = order.items.length - 1;
+                const itemsList = order.items || [];
+                const totalQty = itemsList.reduce((sum, item) => sum + (item.quantity || 0), 0);
+                const primaryItem = itemsList[0];
+                const additionalItems = Math.max(0, itemsList.length - 1);
 
                 return (
                   <tr
@@ -477,17 +483,17 @@ export default function OrdersPage() {
                   >
                     <td className="py-4 px-6 align-top">
                       <span className="text-sm font-medium text-[#a1005b]">
-                        {order.orderId}
+                        {order.orderId || "—"}
                       </span>
                     </td>
                     <td className="py-4 px-6 align-top">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-medium text-gray-900">
-                          {order.shipping.fullName}
+                          {order.shipping?.fullName || "Guest Customer"}
                         </span>
                         <span className="flex items-center gap-1 text-[13px] text-gray-500">
                           <MapPin size={12} />
-                          {order.shipping.city}, {order.shipping.state}
+                          {order.shipping?.city || "Unknown City"}{order.shipping?.state ? `, ${order.shipping.state}` : ""}
                         </span>
                       </div>
                     </td>
@@ -516,15 +522,15 @@ export default function OrdersPage() {
                       {formatDate(order.createdAt)}
                     </td>
                     <td className="py-4 px-6 align-top">
-                      <PaymentBadge status={order.paymentStatus} />
+                      <PaymentBadge status={order.paymentStatus || "pending"} />
                     </td>
                     <td className="py-4 px-6 align-top">
                       <div className="flex flex-col gap-1 items-start">
                         <div className="flex items-center gap-2">
-                          <DeliveryBadge status={order.status} />
+                          <DeliveryBadge status={order.status || "pending"} />
                           <StatusDropdown
-                            currentStatus={order.status}
-                            orderId={order.orderId}
+                            currentStatus={order.status || "pending"}
+                            orderId={order.orderId || ""}
                             onUpdate={handleStatusUpdate}
                           />
                         </div>

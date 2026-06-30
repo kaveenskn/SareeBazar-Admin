@@ -24,7 +24,10 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetch("/api/backend/shop-info")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch shop info");
+        return res.json();
+      })
       .then(data => {
         if (data && data.storeName) {
           setStoreName(data.storeName);
@@ -67,6 +70,7 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              prefetch={false}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                   ? "bg-[#a1005b] text-white font-medium shadow-md shadow-[#a1005b]/20"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"

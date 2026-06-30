@@ -47,7 +47,7 @@ async function run() {
 
   console.log("1. Registering user...");
   try {
-    const regRes = await request("http://localhost:5000/api/auth/register", "POST", {
+    const regRes = await request("http://localhost:5001/api/auth/register", "POST", {
       name,
       email,
       password,
@@ -60,7 +60,7 @@ async function run() {
   console.log("\n2. Logging in...");
   let token = "";
   try {
-    const loginRes = await request("http://localhost:5000/api/auth/login", "POST", {
+    const loginRes = await request("http://localhost:5001/api/auth/login", "POST", {
       email,
       password,
     });
@@ -85,11 +85,11 @@ async function run() {
           name: "Test Saree",
           selectedColor: "Crimson Red",
           selectedColorHex: "#DC143C",
-          selectedColorImage: "http://localhost:5000/uploads/test.jpg",
+          selectedColorImage: "http://localhost:5001/uploads/test.jpg",
           quantity: 1,
           price: 5500,
           originalPrice: 6500,
-          image: "http://localhost:5000/uploads/test.jpg",
+          image: "http://localhost:5001/uploads/test.jpg",
           category: "Saree",
           fabric: "Silk",
         },
@@ -112,7 +112,7 @@ async function run() {
       paymentMethod: "Cash on Delivery",
     };
 
-    const orderRes = await request("http://localhost:5000/api/orders", "POST", orderPayload, {
+    const orderRes = await request("http://localhost:5001/api/orders", "POST", orderPayload, {
       Authorization: `Bearer ${token}`,
     });
 

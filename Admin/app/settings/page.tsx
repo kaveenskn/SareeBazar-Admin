@@ -151,6 +151,24 @@ export default function SettingsPage() {
     }
   };
 
+  // Fetch shop info on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchShopInfo();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+
+
   const handleSave = async () => {
     try {
       setSaving(true);
