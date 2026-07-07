@@ -4,6 +4,9 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const { protect } = require("../middleware/authMiddleware");
 const sendEmail = require("../utils/sendEmail");
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const router = express.Router();
 
@@ -67,6 +70,43 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ─── POST /api/auth/google ───
+router.post("/google", async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "No token provided" });
+
+    // Verify Google Token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    // If not, create a new user
+    if (!user) {
+      // Generate a random secure password for Google-authenticated users
+      const randomPassword = crypto.randomBytes(20).toString("hex");
+      user = await User.create({ name, email, password: randomPassword });
+    }
+
+    // Generate tokens & set cookies
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    res.json({
+      user: { id: user._id, name: user.name, email: user.email },
+      accessToken,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Google Authentication failed", error: err.message });
   }
 });
 
