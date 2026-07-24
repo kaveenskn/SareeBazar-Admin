@@ -1,4 +1,7 @@
-import { recentOrders, type OrderStatus } from "@/app/lib/mock-data";
+"use client";
+
+import { useDashboard } from "./dashboard-provider";
+import type { OrderStatus } from "@/app/lib/mock-data";
 
 const statusStyle: Record<OrderStatus, string> = {
   Delivered:  "bg-emerald-50 text-emerald-700",
@@ -9,13 +12,36 @@ const statusStyle: Record<OrderStatus, string> = {
 };
 
 export default function RecentOrders() {
+  const { data, loading } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6">
+        <h2 className="font-serif text-xl text-gray-900">Recent Orders</h2>
+        <p className="text-sm text-gray-500 mt-0.5 mb-5">Live order stream</p>
+        <div className="space-y-3 animate-pulse">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-3">
+              <div className="h-10 w-10 rounded-full bg-pink-100" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 rounded bg-gray-100" />
+                <div className="h-3 w-48 rounded bg-gray-50" />
+              </div>
+              <div className="h-6 w-16 rounded-md bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6">
       <h2 className="font-serif text-xl text-gray-900">Recent Orders</h2>
       <p className="text-sm text-gray-500 mt-0.5 mb-5">Live order stream</p>
 
       <div className="space-y-2">
-        {recentOrders.map((order) => (
+        {data.recentOrders.map((order) => (
           <div
             key={order.id}
             className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"

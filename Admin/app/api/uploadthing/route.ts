@@ -1,7 +1,9 @@
 import { createRouteHandler } from "uploadthing/next";
 import { ourFileRouter } from "./core";
 
-// Export routes for Next App Router
-export const { GET, POST } = createRouteHandler({
+const handlers = createRouteHandler({
   router: ourFileRouter,
 });
+
+export const GET = handlers.GET;
+export const POST = handlers.POST;

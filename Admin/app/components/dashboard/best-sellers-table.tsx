@@ -1,5 +1,8 @@
+"use client";
+
 import { Clock } from "lucide-react";
-import { bestSellers, type StockStatus } from "@/app/lib/mock-data";
+import { useDashboard } from "./dashboard-provider";
+import type { StockStatus } from "@/app/lib/mock-data";
 
 const stockStyle: Record<StockStatus, string> = {
   good:   "bg-emerald-50 text-emerald-700",
@@ -8,6 +11,29 @@ const stockStyle: Record<StockStatus, string> = {
 };
 
 export default function BestSellersTable() {
+  const { data, loading } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6">
+        <h2 className="font-serif text-xl text-gray-900">Best Selling Sarees</h2>
+        <p className="text-sm text-gray-500 mt-0.5 mb-5">Top performers this quarter</p>
+        <div className="space-y-4 animate-pulse">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-gray-100" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-40 rounded bg-gray-100" />
+                <div className="h-3 w-24 rounded bg-gray-50" />
+              </div>
+              <div className="h-4 w-16 rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6">
       <h2 className="font-serif text-xl text-gray-900">Best Selling Sarees</h2>
@@ -26,7 +52,7 @@ export default function BestSellersTable() {
             </tr>
           </thead>
           <tbody>
-            {bestSellers.map((item) => (
+            {data.bestSellers.map((item) => (
               <tr
                 key={item.id}
                 className="border-b border-gray-50 hover:bg-pink-50/40 transition-colors"

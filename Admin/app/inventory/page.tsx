@@ -154,10 +154,11 @@ export default function InventoryPage() {
   const categories = [...new Set(items.map(p => p.category))];
 
   // Handlers
-  const handleSingleUpdate = async (id: string, stock: number) => {
+  const handleSingleUpdate = async (id: string, data: { stock?: number; variants?: { colorName: string; stock: number }[] } | number) => {
     try {
       setSaving(true);
-      await updateStock(id, stock);
+      const payload = typeof data === "number" ? { stock: data } : data;
+      await updateStock(id, payload);
       await loadData();
       setEditingItem(null);
       setInlineEditId(null);
@@ -424,9 +425,16 @@ export default function InventoryPage() {
                       </div>
                     ) : (
                       <button
-                        onClick={() => { setInlineEditId(item._id); setInlineEditValue(item.stock); }}
+                        onClick={() => { 
+                          if (item.colorVariants && item.colorVariants.length > 0) {
+                            setEditingItem(item);
+                          } else {
+                            setInlineEditId(item._id); 
+                            setInlineEditValue(item.stock); 
+                          }
+                        }}
                         className="text-sm font-semibold text-gray-900 hover:text-[#a1005b] cursor-pointer transition-colors underline decoration-dashed underline-offset-4 decoration-gray-300 hover:decoration-[#a1005b]"
-                        title="Click to edit inline"
+                        title={item.colorVariants && item.colorVariants.length > 0 ? "Click to update stock by color" : "Click to edit inline"}
                       >
                         {item.stock}
                       </button>
