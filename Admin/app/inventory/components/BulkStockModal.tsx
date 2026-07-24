@@ -94,64 +94,70 @@ export default function BulkStockModal({
                       {product.name}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {product.category} · Was: {product.stock}
+                      {product.category} · {product.colorVariants && product.colorVariants.length > 0 ? `Total stock: ${product.stock}` : `Was: ${product.stock}`}
                     </span>
                   </div>
 
                   {/* Stock input */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() =>
-                        setStockValues((sv) => ({
-                          ...sv,
-                          [product._id]: Math.max(
-                            0,
-                            (sv[product._id] ?? 0) - 1
-                          ),
-                        }))
-                      }
-                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm font-bold"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      min={0}
-                      value={stockValues[product._id]}
-                      onChange={(e) =>
-                        setStockValues((sv) => ({
-                          ...sv,
-                          [product._id]: Math.max(
-                            0,
-                            parseInt(e.target.value) || 0
-                          ),
-                        }))
-                      }
-                      className="w-16 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg py-1.5 outline-none focus:border-[#a1005b] transition-colors bg-white"
-                    />
-                    <button
-                      onClick={() =>
-                        setStockValues((sv) => ({
-                          ...sv,
-                          [product._id]: (sv[product._id] ?? 0) + 1,
-                        }))
-                      }
-                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm font-bold"
-                    >
-                      +
-                    </button>
+                    {product.colorVariants && product.colorVariants.length > 0 ? (
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">Update via individual edit</span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            setStockValues((sv) => ({
+                              ...sv,
+                              [product._id]: Math.max(
+                                0,
+                                (sv[product._id] ?? 0) - 1
+                              ),
+                            }))
+                          }
+                          className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm font-bold"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          value={stockValues[product._id]}
+                          onChange={(e) =>
+                            setStockValues((sv) => ({
+                              ...sv,
+                              [product._id]: Math.max(
+                                0,
+                                parseInt(e.target.value) || 0
+                              ),
+                            }))
+                          }
+                          className="w-16 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg py-1.5 outline-none focus:border-[#a1005b] transition-colors bg-white"
+                        />
+                        <button
+                          onClick={() =>
+                            setStockValues((sv) => ({
+                              ...sv,
+                              [product._id]: (sv[product._id] ?? 0) + 1,
+                            }))
+                          }
+                          className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm font-bold"
+                        >
+                          +
+                        </button>
 
-                    {/* Diff */}
-                    {diff !== 0 && (
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          diff > 0
-                            ? "bg-green-50 text-green-600"
-                            : "bg-red-50 text-red-500"
-                        }`}
-                      >
-                        {diff > 0 ? `+${diff}` : diff}
-                      </span>
+                        {/* Diff */}
+                        {diff !== 0 && (
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              diff > 0
+                                ? "bg-green-50 text-green-600"
+                                : "bg-red-50 text-red-500"
+                            }`}
+                          >
+                            {diff > 0 ? `+${diff}` : diff}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

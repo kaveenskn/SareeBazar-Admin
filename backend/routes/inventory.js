@@ -121,18 +121,25 @@ router.get("/summary", async (req, res) => {
  * ────────────────────────────────────────── */
 router.patch("/:id/stock", async (req, res) => {
   try {
-    const { stock, colorName } = req.body;
-
-    if (stock === undefined || stock === null || stock < 0) {
-      return res.status(400).json({ message: "Valid stock value is required (>= 0)" });
-    }
+    const { stock, colorName, variants } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (colorName && product.colorVariants && product.colorVariants.length > 0) {
+    if (variants && Array.isArray(variants)) {
+      // Update multiple color variants
+      let updatedVariants = false;
+      variants.forEach(v => {
+        const variant = product.colorVariants.find(cv => cv.name.toLowerCase() === v.colorName.toLowerCase());
+        if (variant && v.stock !== undefined) {
+           variant.stock = parseInt(v.stock);
+           updatedVariants = true;
+        }
+      });
+      if (updatedVariants) product.markModified('colorVariants');
+    } else if (colorName && product.colorVariants && product.colorVariants.length > 0) {
       // Update specific color variant stock
       const variant = product.colorVariants.find(
         (cv) => cv.name.toLowerCase() === colorName.toLowerCase()
@@ -140,10 +147,15 @@ router.patch("/:id/stock", async (req, res) => {
       if (!variant) {
         return res.status(404).json({ message: `Color "${colorName}" not found` });
       }
-      variant.stock = parseInt(stock);
-      // Total stock and inStock are auto-computed by pre-save hook
-    } else {
-      // Update product-level stock (no color variants)
+      if (stock !== undefined && stock !== null) {
+        variant.stock = parseInt(stock);
+        product.markModified('colorVariants');
+      }
+    } else if (stock !== undefined && stock !== null) {
+      // If product has color variants, prevent updating total stock directly
+      if (product.colorVariants && product.colorVariants.length > 0) {
+        return res.status(400).json({ message: "Cannot update total stock directly for products with color variants." });
+      }
       product.stock = parseInt(stock);
       product.inStock = parseInt(stock) > 0;
     }

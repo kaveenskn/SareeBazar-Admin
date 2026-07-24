@@ -1,17 +1,44 @@
+"use client";
+
 import {
   IndianRupee, ShoppingBag, TrendingUp, Users,
   Crown, TriangleAlert, ArrowUpRight, ArrowDownRight,
+  Loader2,
 } from "lucide-react";
-import { kpiStats } from "@/app/lib/mock-data";
+import { useDashboard } from "./dashboard-provider";
 
 const iconMap = {
   IndianRupee, ShoppingBag, TrendingUp, Users, Crown, TriangleAlert,
 } as const;
 
 export default function KpiCards() {
+  const { data, loading } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 animate-pulse"
+          >
+            <div className="flex items-start justify-between">
+              <div className="h-11 w-11 rounded-xl bg-pink-50" />
+              <div className="h-6 w-14 rounded-lg bg-gray-100" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="h-7 w-24 rounded bg-gray-100" />
+              <div className="h-4 w-20 rounded bg-gray-50" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-      {kpiStats.map((stat) => {
+      {data.kpiStats.map((stat) => {
         const Icon = iconMap[stat.icon as keyof typeof iconMap];
         const isUp = stat.change >= 0;
 
