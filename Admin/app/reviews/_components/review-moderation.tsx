@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Star,
-  Check,
-  X,
   Reply,
   Loader2,
   RefreshCw,
@@ -17,7 +15,7 @@ import {
 
 const API_BASE = "/api/backend/reviews";
 
-type Tab = "All" | "Approved" | "Pending";
+type Tab = "All";
 
 interface ReviewUser {
   _id: string;
@@ -98,14 +96,10 @@ function StarRating({ rating }: { rating: number }) {
 
 function ReviewCard({
   review,
-  onApprove,
-  onReject,
   onDelete,
   onReply,
 }: {
   review: ReviewFromDB;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
   onDelete: (id: string) => void;
   onReply: (id: string, text: string) => void;
 }) {
@@ -152,15 +146,6 @@ function ReviewCard({
             </div>
             <div className="flex items-center gap-3">
               <StarRating rating={review.rating} />
-              <span
-                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md ${
-                  review.isApproved
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-amber-50 text-amber-700"
-                }`}
-              >
-                {review.isApproved ? "Approved" : "Pending"}
-              </span>
             </div>
           </div>
 
@@ -218,25 +203,6 @@ function ReviewCard({
 
           {/* Action buttons */}
           <div className="flex gap-2 mt-4">
-            {!review.isApproved ? (
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); onApprove(review._id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 transition-colors"
-              >
-                <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                Approve
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); onReject(review._id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden="true" />
-                Unapprove
-              </button>
-            )}
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); setReplyOpen(!replyOpen); }}
@@ -262,7 +228,7 @@ function ReviewCard({
 
 /* ─── Tabs ─── */
 
-const TABS: Tab[] = ["All", "Approved", "Pending"];
+const TABS: Tab[] = ["All"];
 
 /* ─── Main Component ─── */
 
@@ -286,8 +252,7 @@ export default function ReviewModeration() {
           order: "desc",
         });
 
-        if (activeTab === "Approved") params.set("approved", "true");
-        if (activeTab === "Pending") params.set("approved", "false");
+
 
         const res = await fetch(`${API_BASE}/admin/all?${params}`);
         const data = await res.json();
@@ -315,38 +280,8 @@ export default function ReviewModeration() {
 
   /* ─── Actions ─── */
 
-  const handleApprove = async (reviewId: string) => {
-    try {
-      const res = await fetch(`${API_BASE}/admin/${reviewId}/approve`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isApproved: true }),
-      });
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) => (r._id === reviewId ? { ...r, isApproved: true } : r))
-        );
-      }
-    } catch {
-      // silently fail
-    }
-  };
-
   const handleReject = async (reviewId: string) => {
-    try {
-      const res = await fetch(`${API_BASE}/admin/${reviewId}/approve`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isApproved: false }),
-      });
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) => (r._id === reviewId ? { ...r, isApproved: false } : r))
-        );
-      }
-    } catch {
-      // silently fail
-    }
+    // no-op: approval removed
   };
 
   const handleDelete = async (reviewId: string) => {
@@ -392,10 +327,10 @@ export default function ReviewModeration() {
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h2 className="font-serif text-xl text-gray-900">
-            Review Moderation
+            Customer Reviews
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Approve, reply, or remove customer reviews
+            Reply to or remove customer reviews
             {pagination.total > 0 && (
               <span className="ml-1 text-gray-400">
                 · {pagination.total} total
@@ -446,8 +381,6 @@ export default function ReviewModeration() {
               <ReviewCard
                 key={review._id}
                 review={review}
-                onApprove={handleApprove}
-                onReject={handleReject}
                 onDelete={handleDelete}
                 onReply={handleReply}
               />

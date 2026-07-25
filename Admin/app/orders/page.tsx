@@ -3,15 +3,12 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Search,
-  Filter,
-  Download,
   MapPin,
   CreditCard,
   Box,
   Clock,
   Truck,
   CheckCircle2,
-  RefreshCw,
   ChevronDown,
   AlertCircle,
   XCircle,
@@ -402,24 +399,7 @@ export default function OrdersPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 pr-2">
-          <button
-            onClick={() => fetchOrders(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-            Refresh
-          </button>
-          <button className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
-            <Filter size={16} />
-            Filters
-          </button>
-          <button className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
-            <Download size={16} />
-            Export
-          </button>
-        </div>
+
       </div>
 
       {/* Table (Scrollable Container) */}

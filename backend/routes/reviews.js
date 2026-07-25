@@ -37,7 +37,6 @@ router.get("/product/:productId", async (req, res) => {
 
     const filter = {
       product: productIdObj,
-      isApproved: true,
     };
 
     const sortObj = {};
@@ -112,12 +111,16 @@ router.post("/product/:productId", protect, async (req, res) => {
       return res.status(400).json({ message: "You have already reviewed this product" });
     }
 
-    // Check if user has purchased this product (verified purchase)
+    // Check if user has purchased this product (must have a delivered order)
     const hasOrdered = await Order.findOne({
       user: req.userId,
       "items.slug": product.slug,
       status: "delivered",
     });
+
+    if (!hasOrdered) {
+      return res.status(403).json({ message: "You can only review products from your delivered orders" });
+    }
 
     const review = await Review.create({
       user: req.userId,
@@ -125,7 +128,7 @@ router.post("/product/:productId", protect, async (req, res) => {
       rating,
       title: title || "",
       comment,
-      isVerifiedPurchase: !!hasOrdered,
+      isVerifiedPurchase: true,
     });
 
     const populated = await review.populate("user", "name");
@@ -393,16 +396,13 @@ router.delete("/admin/:reviewId", async (req, res) => {
  * ────────────────────────────────────────── */
 router.get("/admin/stats", async (req, res) => {
   try {
-    const [totalReviews, pendingApproval, avgRating, ratingDistribution, recentReviews] =
+    const [totalReviews, avgRating, ratingDistribution, recentReviews] =
       await Promise.all([
         Review.countDocuments(),
-        Review.countDocuments({ isApproved: false }),
         Review.aggregate([
-          { $match: { isApproved: true } },
           { $group: { _id: null, avg: { $avg: "$rating" } } },
         ]),
         Review.aggregate([
-          { $match: { isApproved: true } },
           { $group: { _id: "$rating", count: { $sum: 1 } } },
           { $sort: { _id: -1 } },
         ]),
@@ -421,7 +421,6 @@ router.get("/admin/stats", async (req, res) => {
 
     res.json({
       totalReviews,
-      pendingApproval,
       averageRating: avgRating.length > 0 ? Math.round(avgRating[0].avg * 10) / 10 : 0,
       ratingDistribution: breakdown,
       recentReviews,
