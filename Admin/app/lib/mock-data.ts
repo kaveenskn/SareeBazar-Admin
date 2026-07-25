@@ -2,9 +2,9 @@
 export const kpiStats = [
   {
     id: "revenue",
-    icon: "IndianRupee",
+    icon: "Banknote",
     label: "Total Revenue",
-    value: "₹52,93,000",
+    value: "LKR 52,93,000",
     change: 18.4,
     variant: "primary" as const,
   },
@@ -20,7 +20,7 @@ export const kpiStats = [
     id: "monthly",
     icon: "TrendingUp",
     label: "Monthly Sales",
-    value: "₹7,52,000",
+    value: "LKR 7,52,000",
     change: 9.1,
     variant: "soft" as const,
   },
@@ -103,7 +103,7 @@ export const bestSellers = [
     name: "Banarasi Silk Royale",
     category: "Wedding",
     unitsSold: 142,
-    revenue: "₹26,97,858",
+    revenue: "LKR 26,97,858",
     peakTime: "Evening",
     stock: 24,
     stockStatus: "warn" as StockStatus,
@@ -114,7 +114,7 @@ export const bestSellers = [
     name: "Kanjivaram Aurora",
     category: "Bridal",
     unitsSold: 118,
-    revenue: "₹28,91,000",
+    revenue: "LKR 28,91,000",
     peakTime: "Night",
     stock: 8,
     stockStatus: "danger" as StockStatus,
@@ -125,7 +125,7 @@ export const bestSellers = [
     name: "Chanderi Whisper",
     category: "Daily",
     unitsSold: 96,
-    revenue: "₹4,12,704",
+    revenue: "LKR 4,12,704",
     peakTime: "Morning",
     stock: 56,
     stockStatus: "good" as StockStatus,
@@ -136,7 +136,7 @@ export const bestSellers = [
     name: "Mysore Silk Dusk",
     category: "Festival",
     unitsSold: 87,
-    revenue: "₹6,87,213",
+    revenue: "LKR 6,87,213",
     peakTime: "Evening",
     stock: 3,
     stockStatus: "danger" as StockStatus,
@@ -147,7 +147,7 @@ export const bestSellers = [
     name: "Patola Ember",
     category: "Party",
     unitsSold: 74,
-    revenue: "₹7,02,926",
+    revenue: "LKR 7,02,926",
     peakTime: "Afternoon",
     stock: 31,
     stockStatus: "good" as StockStatus,
@@ -158,7 +158,7 @@ export const bestSellers = [
     name: "Tussar Sundown",
     category: "Daily",
     unitsSold: 65,
-    revenue: "₹2,27,435",
+    revenue: "LKR 2,27,435",
     peakTime: "Morning",
     stock: 42,
     stockStatus: "good" as StockStatus,
@@ -170,12 +170,12 @@ export const bestSellers = [
 export type OrderStatus = "Delivered" | "Shipped" | "Processing" | "Pending" | "Cancelled";
 
 export const recentOrders = [
-  { id: "ORD-29481", customer: "Ananya Sharma",  initial: "A", product: "Banarasi Silk Royale", amount: "₹18,999", time: "2h ago",  status: "Delivered"  as OrderStatus },
-  { id: "ORD-29480", customer: "Meera Iyer",     initial: "M", product: "Kanjivaram Aurora",    amount: "₹24,500", time: "3h ago",  status: "Shipped"     as OrderStatus },
-  { id: "ORD-29479", customer: "Riya Patel",     initial: "R", product: "Chanderi Whisper",     amount: "₹4,299",  time: "5h ago",  status: "Processing"  as OrderStatus },
-  { id: "ORD-29478", customer: "Kavya Reddy",    initial: "K", product: "Mysore Silk Dusk",     amount: "₹7,899",  time: "6h ago",  status: "Pending"     as OrderStatus },
-  { id: "ORD-29477", customer: "Naina Verma",    initial: "N", product: "Patola Ember",         amount: "₹9,499",  time: "8h ago",  status: "Delivered"   as OrderStatus },
-  { id: "ORD-29476", customer: "Aditi Singh",    initial: "A", product: "Tussar Sundown",       amount: "₹3,499",  time: "1d ago",  status: "Cancelled"   as OrderStatus },
+  { id: "ORD-29481", customer: "Ananya Sharma",  initial: "A", product: "Banarasi Silk Royale", amount: "LKR 18,999", time: "2h ago",  status: "Delivered"  as OrderStatus },
+  { id: "ORD-29480", customer: "Meera Iyer",     initial: "M", product: "Kanjivaram Aurora",    amount: "LKR 24,500", time: "3h ago",  status: "Shipped"     as OrderStatus },
+  { id: "ORD-29479", customer: "Riya Patel",     initial: "R", product: "Chanderi Whisper",     amount: "LKR 4,299",  time: "5h ago",  status: "Processing"  as OrderStatus },
+  { id: "ORD-29478", customer: "Kavya Reddy",    initial: "K", product: "Mysore Silk Dusk",     amount: "LKR 7,899",  time: "6h ago",  status: "Pending"     as OrderStatus },
+  { id: "ORD-29477", customer: "Naina Verma",    initial: "N", product: "Patola Ember",         amount: "LKR 9,499",  time: "8h ago",  status: "Delivered"   as OrderStatus },
+  { id: "ORD-29476", customer: "Aditi Singh",    initial: "A", product: "Tussar Sundown",       amount: "LKR 3,499",  time: "1d ago",  status: "Cancelled"   as OrderStatus },
 ];
 
 // ─── Latest Reviews ───────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ export const latestReviews = [
 
 // ─── Insight Cards ────────────────────────────────────────────────────────────
 export const insightCards = [
-  { id: "top-collection",  icon: "Crown",    label: "Top Collection",  title: "Wedding Couture",    subtitle: "48 sarees · ₹8.4L revenue" },
+  { id: "top-collection",  icon: "Crown",    label: "Top Collection",  title: "Wedding Couture",    subtitle: "48 sarees · LKR 8.4L revenue" },
   { id: "most-wishlisted", icon: "Heart",    label: "Most Wishlisted", title: "Kanjivaram Aurora",  subtitle: "2,184 saves"                },
   { id: "trending-color",  icon: "Palette",  label: "Trending Color",  title: "Ruby Magenta",       subtitle: "↑ 32% this week"            },
   { id: "peak-hour",       icon: "Sparkles", label: "Peak Hour",       title: "8 — 10 PM",          subtitle: "42% of daily orders"        },

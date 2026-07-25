@@ -19,9 +19,10 @@ import {
   Calendar,
   CreditCard,
   XCircle,
+  Star,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/customers";
+const API_BASE = "/api/backend/customers";
 
 /* ─── Types ─── */
 interface OrderItem {
@@ -62,14 +63,14 @@ interface Customer {
 interface Stats {
   totalCustomers: number;
   vipMembers: number;
-  repeatRate: number;
+  goldMembers: number;
   avgLTV: number;
 }
 
 /* ─── Helpers ─── */
 
 function formatCurrency(amount: number): string {
-  return `₹${amount.toLocaleString("en-IN")}`;
+  return `LKR ${amount.toLocaleString("en-IN")}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -160,7 +161,8 @@ const PaymentBadge = ({ status }: { status: string }) => {
 /* ─── Customer Card ─── */
 const CustomerCard = ({ customer }: { customer: Customer }) => {
   const [expanded, setExpanded] = useState(false);
-  const initial = customer.name.charAt(0).toUpperCase();
+  const initial = customer.name ? customer.name.charAt(0).toUpperCase() : "?";
+  const customerOrders = customer.orders || [];
 
   // Avatar gradient based on tier
   const avatarGradient: Record<string, string> = {
@@ -244,7 +246,7 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
       </div>
 
       {/* ─── Expanded: Purchase History ─── */}
-      {expanded && customer.orders.length > 0 && (
+      {expanded && customerOrders.length > 0 && (
         <div className="border-t border-gray-100 px-5 pb-5">
           <div className="pt-4 pb-2 flex items-center gap-2">
             <ShoppingBag size={14} className="text-[#a1005b]" />
@@ -256,12 +258,12 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
           {/* ─── Timeline of Orders ─── */}
           <div className="relative">
             {/* Vertical connector line */}
-            {customer.orders.length > 1 && (
+            {customerOrders.length > 1 && (
               <div className="absolute left-[15px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-[#a1005b] via-[#d93097] to-gray-200 rounded-full" />
             )}
 
             <div className="flex flex-col gap-3">
-              {customer.orders.map((order, idx) => (
+              {customerOrders.map((order, idx) => (
                 <div key={order.orderId} className="relative flex gap-3">
                   {/* Timeline dot */}
                   <div className="relative z-10 mt-1.5 shrink-0">
@@ -369,7 +371,7 @@ export default function CustomersPage() {
   const [stats, setStats] = useState<Stats>({
     totalCustomers: 0,
     vipMembers: 0,
-    repeatRate: 0,
+    goldMembers: 0,
     avgLTV: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -390,7 +392,7 @@ export default function CustomersPage() {
         data.stats || {
           totalCustomers: 0,
           vipMembers: 0,
-          repeatRate: 0,
+          goldMembers: 0,
           avgLTV: 0,
         }
       );
@@ -444,15 +446,15 @@ export default function CustomersPage() {
       label: "VIP Members",
       value: stats.vipMembers.toLocaleString(),
       icon: Crown,
-      color: "text-[#d97706]",
-      bg: "bg-[#fffbeb]",
+      color: "text-[#7e22ce]",
+      bg: "bg-[#f3e8ff]",
     },
     {
-      label: "Repeat Rate",
-      value: `${stats.repeatRate}%`,
-      icon: Repeat,
-      color: "text-[#059669]",
-      bg: "bg-[#ecfdf5]",
+      label: "Gold Members",
+      value: stats.goldMembers.toLocaleString(),
+      icon: Star,
+      color: "text-[#d97706]",
+      bg: "bg-[#fffbeb]",
     },
     {
       label: "Avg. LTV",

@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Search, Package, Boxes, AlertTriangle, TrendingDown,
-  DollarSign, Loader2, ChevronLeft, ChevronRight, ChevronDown,
+  Banknote, Loader2, ChevronLeft, ChevronRight, ChevronDown,
   Pencil, CheckSquare, Square, Layers, Box,
   ArrowUpDown, ArrowUp, ArrowDown, RefreshCw,
 } from "lucide-react";
@@ -219,7 +219,7 @@ export default function InventoryPage() {
   const summaryCards = stats ? [
     { label: "Total SKUs", value: stats.summary.totalProducts, icon: Boxes, color: "bg-[#fdf2f8] text-[#d93097]" },
     { label: "Total Units", value: stats.summary.totalStock.toLocaleString(), icon: Package, color: "bg-blue-50 text-blue-600" },
-    { label: "Inventory Value", value: `$${stats.summary.totalValue.toLocaleString()}`, icon: DollarSign, color: "bg-emerald-50 text-emerald-600" },
+    { label: "Inventory Value", value: `LKR ${stats.summary.totalValue.toLocaleString()}`, icon: Banknote, color: "bg-emerald-50 text-emerald-600" },
     { label: "Low Stock", value: stats.summary.lowStock, icon: AlertTriangle, color: "bg-amber-50 text-amber-600" },
     { label: "Out of Stock", value: stats.summary.outOfStock, icon: TrendingDown, color: "bg-red-50 text-red-500" },
   ] : [];
@@ -392,7 +392,7 @@ export default function InventoryPage() {
                     <span className="text-sm text-gray-600">{item.category}</span>
                   </td>
                   <td className="py-4 px-4">
-                    <span className="text-sm font-semibold text-gray-900">${item.price}</span>
+                    <span className="text-sm font-semibold text-gray-900">LKR {item.price}</span>
                   </td>
                   <td className="py-4 px-4">
                     {inlineEditId === item._id ? (
@@ -489,7 +489,7 @@ export default function InventoryPage() {
                   <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
                     <div className="bg-[#d93097] h-1.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-1">${cat.value.toLocaleString()} value</div>
+                  <div className="text-[10px] text-gray-400 mt-1">LKR {cat.value.toLocaleString()} value</div>
                 </div>
               );
             })}

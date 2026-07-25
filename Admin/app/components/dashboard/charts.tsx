@@ -57,7 +57,7 @@ export function RevenueChart() {
             />
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(v: any) => [`₹${(Number(v) / 100000).toFixed(1)}L`, "Revenue"]}
+              formatter={(v: any) => [`LKR ${(Number(v) / 100000).toFixed(1)}L`, "Revenue"]}
             />
             <Area
               type="monotone"

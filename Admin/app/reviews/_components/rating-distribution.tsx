@@ -7,7 +7,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from "recharts";
 
-const API_BASE = "http://localhost:5000/api/reviews";
+const API_BASE = "/api/backend/reviews";
 
 const PRIMARY = "#a1005b";
 const GRID    = "#f3f4f6";
