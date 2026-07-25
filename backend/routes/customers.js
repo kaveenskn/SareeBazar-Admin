@@ -84,11 +84,7 @@ router.get("/admin/all", async (req, res) => {
     // Calculate aggregate stats
     const totalCustomers = customers.length;
     const vipMembers = customers.filter((c) => c.tier === "VIP").length;
-    const repeatCustomers = customers.filter((c) => c.totalOrders > 1).length;
-    const repeatRate =
-      totalCustomers > 0
-        ? Math.round((repeatCustomers / totalCustomers) * 100)
-        : 0;
+    const goldMembers = customers.filter((c) => c.tier === "Gold").length;
     const avgLTV =
       totalCustomers > 0
         ? Math.round(
@@ -102,7 +98,7 @@ router.get("/admin/all", async (req, res) => {
       stats: {
         totalCustomers,
         vipMembers,
-        repeatRate,
+        goldMembers,
         avgLTV,
       },
     });

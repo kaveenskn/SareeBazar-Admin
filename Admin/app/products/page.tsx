@@ -182,7 +182,10 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => {
-    loadProducts();
+    const timer = setTimeout(() => {
+      loadProducts();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadProducts]);
 
   // Stats
@@ -435,11 +438,11 @@ export default function ProductsPage() {
                     <div className="flex flex-col">
                       {product.status === "sale" && product.discountPercent ? (
                         <>
-                          <span className="text-sm font-semibold text-gray-900">₹{Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
-                          <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                          <span className="text-sm font-semibold text-gray-900">LKR {Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
+                          <span className="text-xs text-gray-400 line-through">LKR {product.price}</span>
                         </>
                       ) : (
-                        <span className="text-sm font-semibold text-gray-900">₹{product.price}</span>
+                        <span className="text-sm font-semibold text-gray-900">LKR {product.price}</span>
                       )}
                     </div>
                   </td>
@@ -524,11 +527,11 @@ export default function ProductsPage() {
                   <div className="flex items-baseline gap-1.5">
                     {product.status === "sale" && product.discountPercent ? (
                       <>
-                        <span className="text-lg font-bold text-gray-900">₹{Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
-                        <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                        <span className="text-lg font-bold text-gray-900">LKR {Math.round(product.price * (1 - product.discountPercent / 100) * 100) / 100}</span>
+                        <span className="text-xs text-gray-400 line-through">LKR {product.price}</span>
                       </>
                     ) : (
-                      <span className="text-lg font-bold text-gray-900">₹{product.price}</span>
+                      <span className="text-lg font-bold text-gray-900">LKR {product.price}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">

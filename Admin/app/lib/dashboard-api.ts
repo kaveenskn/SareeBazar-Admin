@@ -65,8 +65,8 @@ export interface InsightCard {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatINR(amount: number): string {
-  return "₹" + amount.toLocaleString("en-IN");
+function formatLKR(amount: number): string {
+  return "LKR " + amount.toLocaleString("en-IN");
 }
 
 function timeAgo(dateStr: string): string {
@@ -190,9 +190,9 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
     const kpiStats: KpiStat[] = [
       {
         id: "revenue",
-        icon: "IndianRupee",
+        icon: "Banknote",
         label: "Total Revenue",
-        value: formatINR(totalRevenue),
+        value: formatLKR(totalRevenue),
         change: 18.4,
         variant: "primary",
       },
@@ -208,7 +208,7 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
         id: "monthly",
         icon: "TrendingUp",
         label: "Monthly Sales",
-        value: formatINR(monthlyRevenue),
+        value: formatLKR(monthlyRevenue),
         change: 9.1,
         variant: "soft",
       },
@@ -337,7 +337,7 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
         name: data.name,
         category: data.category,
         unitsSold: data.count,
-        revenue: formatINR(data.revenue),
+        revenue: formatLKR(data.revenue),
         peakTime,
         stock,
         stockStatus,
@@ -354,7 +354,7 @@ export async function fetchDashboardData(): Promise<DashboardData | null> {
         customer: customerName,
         initial: customerName.charAt(0).toUpperCase(),
         product: firstItem?.name || "Saree",
-        amount: formatINR(order.total || 0),
+        amount: formatLKR(order.total || 0),
         time: timeAgo(order.createdAt),
         status: STATUS_MAP[order.status] || "Pending",
       };

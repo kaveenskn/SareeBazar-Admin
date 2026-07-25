@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/reviews";
+const API_BASE = "/api/backend/reviews";
 
 interface SentimentData {
   positive: number;

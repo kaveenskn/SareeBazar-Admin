@@ -15,7 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api/reviews";
+const API_BASE = "/api/backend/reviews";
 
 type Tab = "All" | "Approved" | "Pending";
 
@@ -57,7 +57,9 @@ interface PaginationData {
 /* ─── Helpers ─── */
 
 function timeAgo(dateStr: string): string {
+  if (!dateStr) return "N/A";
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "N/A";
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -195,7 +197,8 @@ function ReviewCard({
               />
               <div className="flex gap-2">
                 <button
-                  onClick={handleReply}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); handleReply(); }}
                   disabled={sending || !replyText.trim()}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#a1005b] text-white text-xs font-medium hover:bg-[#870049] transition-colors disabled:opacity-50"
                 >
@@ -203,7 +206,8 @@ function ReviewCard({
                   Send Reply
                 </button>
                 <button
-                  onClick={() => { setReplyOpen(false); setReplyText(review.adminReply || ""); }}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); setReplyOpen(false); setReplyText(review.adminReply || ""); }}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -216,7 +220,8 @@ function ReviewCard({
           <div className="flex gap-2 mt-4">
             {!review.isApproved ? (
               <button
-                onClick={() => onApprove(review._id)}
+                type="button"
+                onClick={(e) => { e.preventDefault(); onApprove(review._id); }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-emerald-100 transition-colors"
               >
                 <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -224,7 +229,8 @@ function ReviewCard({
               </button>
             ) : (
               <button
-                onClick={() => onReject(review._id)}
+                type="button"
+                onClick={(e) => { e.preventDefault(); onReject(review._id); }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100 transition-colors"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -232,14 +238,16 @@ function ReviewCard({
               </button>
             )}
             <button
-              onClick={() => setReplyOpen(!replyOpen)}
+              type="button"
+              onClick={(e) => { e.preventDefault(); setReplyOpen(!replyOpen); }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-50 text-[#a1005b] text-xs font-medium hover:bg-pink-100 transition-colors"
             >
               <Reply className="h-3.5 w-3.5" aria-hidden="true" />
               {review.adminReply ? "Edit Reply" : "Reply"}
             </button>
             <button
-              onClick={() => onDelete(review._id)}
+              type="button"
+              onClick={(e) => { e.preventDefault(); onDelete(review._id); }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -299,7 +307,10 @@ export default function ReviewModeration() {
   );
 
   useEffect(() => {
-    fetchReviews(1);
+    const timer = setTimeout(() => {
+      fetchReviews(1);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchReviews]);
 
   /* ─── Actions ─── */
@@ -395,7 +406,8 @@ export default function ReviewModeration() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => fetchReviews(pagination.page, true)}
+            type="button"
+            onClick={(e) => { e.preventDefault(); fetchReviews(pagination.page, true); }}
             disabled={refreshing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
           >
@@ -406,11 +418,12 @@ export default function ReviewModeration() {
             {TABS.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                type="button"
+                onClick={(e) => { e.preventDefault(); setActiveTab(tab); }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab
-                    ? "bg-[#a1005b] text-white border-transparent shadow-sm"
-                    : "border-gray-200 text-gray-600 hover:border-[#a1005b] hover:text-[#a1005b]"
+                    ? "bg-[#a1005b] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {tab}
@@ -449,7 +462,8 @@ export default function ReviewModeration() {
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => fetchReviews(pagination.page - 1)}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); fetchReviews(pagination.page - 1); }}
                   disabled={pagination.page <= 1}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -457,7 +471,8 @@ export default function ReviewModeration() {
                   Previous
                 </button>
                 <button
-                  onClick={() => fetchReviews(pagination.page + 1)}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); fetchReviews(pagination.page + 1); }}
                   disabled={pagination.page >= pagination.pages}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
