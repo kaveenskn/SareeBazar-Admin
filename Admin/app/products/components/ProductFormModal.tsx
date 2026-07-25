@@ -508,12 +508,12 @@ export default function ProductFormModal({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Selling Price (₹) *</label>
+                  <label className={labelClass}>Selling Price (LKR ) *</label>
                   <input type="number" className={inputClass("price")} placeholder="0" value={form.price || ""} onChange={(e) => updateField("price", Number(e.target.value))} />
                   {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
                 </div>
                 <div>
-                  <label className={labelClass}>Cost Price (₹) <span className="text-gray-400 font-normal text-[10px]">Admin only</span></label>
+                  <label className={labelClass}>Cost Price (LKR ) <span className="text-gray-400 font-normal text-[10px]">Admin only</span></label>
                   <input type="number" className={inputClass()} placeholder="0" value={form.originalPrice || ""} onChange={(e) => updateField("originalPrice", Number(e.target.value) || undefined)} />
                 </div>
               </div>
@@ -521,13 +521,13 @@ export default function ProductFormModal({
               {form.price > 0 && (form.originalPrice ?? 0) > 0 && (
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <span className="text-emerald-600 text-sm font-bold">₹</span>
+                    <span className="text-emerald-600 text-sm font-bold">LKR </span>
                   </div>
                   <div className="flex-1">
                     <span className="text-xs text-gray-500">Profit per saree</span>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`text-sm font-bold ${(form.price - (form.originalPrice ?? 0)) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                        ₹{(form.price - (form.originalPrice ?? 0)).toFixed(2)}
+                        LKR {(form.price - (form.originalPrice ?? 0)).toFixed(2)}
                       </span>
                       <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${(form.price - (form.originalPrice ?? 0)) >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                         {((form.price - (form.originalPrice ?? 0)) / form.price * 100).toFixed(1)}% margin
@@ -744,9 +744,9 @@ export default function ProductFormModal({
                     <div className="pt-2 border-t border-red-100 space-y-2">
                       <span className="text-xs text-gray-400 font-medium">Customer will see:</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-400 line-through">₹{form.price}</span>
+                        <span className="text-sm text-gray-400 line-through">LKR {form.price}</span>
                         <span className="text-lg font-bold text-red-600">
-                          ₹{Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100}
+                          LKR {Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100}
                         </span>
                         <span className="text-xs font-medium text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
                           {form.discountPercent}% OFF
@@ -756,7 +756,7 @@ export default function ProductFormModal({
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                           <span>Sale profit:</span>
                           <span className="font-semibold text-emerald-600">
-                            ₹{(Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100 - (form.originalPrice ?? 0)).toFixed(2)}
+                            LKR {(Math.round(form.price * (1 - form.discountPercent / 100) * 100) / 100 - (form.originalPrice ?? 0)).toFixed(2)}
                           </span>
                           <span>per saree</span>
                         </div>

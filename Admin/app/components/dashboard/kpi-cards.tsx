@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  IndianRupee, ShoppingBag, TrendingUp, Users,
+  Banknote, ShoppingBag, TrendingUp, Users,
   Crown, TriangleAlert, ArrowUpRight, ArrowDownRight,
   Loader2,
 } from "lucide-react";
 import { useDashboard } from "./dashboard-provider";
 
 const iconMap = {
-  IndianRupee, ShoppingBag, TrendingUp, Users, Crown, TriangleAlert,
+  Banknote, ShoppingBag, TrendingUp, Users, Crown, TriangleAlert,
 } as const;
 
 export default function KpiCards() {

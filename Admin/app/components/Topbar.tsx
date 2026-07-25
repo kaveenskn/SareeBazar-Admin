@@ -50,7 +50,7 @@ export default function Topbar() {
         subtitle: "Manage your store preferences and configurations.",
       };
     return {
-      title: "Good morning, Admin",
+      title: "Welcome back, Admin",
       subtitle: `Here's what's weaving today at ${storeName}.`,
     };
   };
@@ -123,9 +123,6 @@ export default function Topbar() {
               Store Admin
             </span>
             <span className="text-[11px] text-gray-500">{storeName}</span>
-          </div>
-          <div className="w-10 h-10 bg-[#d93097] text-white rounded-full flex items-center justify-center font-serif text-lg shadow-sm">
-            {storeName.charAt(0)}
           </div>
         </div>
       </div>

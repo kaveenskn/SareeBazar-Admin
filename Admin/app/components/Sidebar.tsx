@@ -39,11 +39,11 @@ export default function Sidebar() {
   const navItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/" },
     { name: "Products", icon: ShoppingBag, href: "/products" },
-    { name: "Collections", icon: Layers, href: "/collections" },
     { name: "Orders", icon: Box, href: "/orders" },
     { name: "Customers", icon: Users, href: "/customers" },
-    { name: "Reviews", icon: Star, href: "/reviews" },
     { name: "Inventory", icon: Boxes, href: "/inventory" },
+    { name: "Collections", icon: Layers, href: "/collections" },
+    { name: "Reviews", icon: Star, href: "/reviews" },
     { name: "Settings", icon: Settings, href: "/settings" },
   ];
 
@@ -51,9 +51,6 @@ export default function Sidebar() {
     <aside className="w-64 flex flex-col h-screen border-r border-gray-100 bg-white sticky top-0">
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#a1005b] rounded-full flex items-center justify-center text-white shrink-0">
-          <Sparkles size={20} />
-        </div>
         <div className="flex flex-col">
           <span className="font-bold text-xl text-[#a1005b] leading-none">{storeName}</span>
           <span className="text-[10px] text-gray-500 tracking-wider font-semibold mt-1">SAREE ATELIER</span>

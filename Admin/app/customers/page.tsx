@@ -19,6 +19,7 @@ import {
   Calendar,
   CreditCard,
   XCircle,
+  Star,
 } from "lucide-react";
 
 const API_BASE = "/api/backend/customers";
@@ -62,14 +63,14 @@ interface Customer {
 interface Stats {
   totalCustomers: number;
   vipMembers: number;
-  repeatRate: number;
+  goldMembers: number;
   avgLTV: number;
 }
 
 /* ─── Helpers ─── */
 
 function formatCurrency(amount: number): string {
-  return `₹${amount.toLocaleString("en-IN")}`;
+  return `LKR ${amount.toLocaleString("en-IN")}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -370,7 +371,7 @@ export default function CustomersPage() {
   const [stats, setStats] = useState<Stats>({
     totalCustomers: 0,
     vipMembers: 0,
-    repeatRate: 0,
+    goldMembers: 0,
     avgLTV: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -391,7 +392,7 @@ export default function CustomersPage() {
         data.stats || {
           totalCustomers: 0,
           vipMembers: 0,
-          repeatRate: 0,
+          goldMembers: 0,
           avgLTV: 0,
         }
       );
@@ -445,15 +446,15 @@ export default function CustomersPage() {
       label: "VIP Members",
       value: stats.vipMembers.toLocaleString(),
       icon: Crown,
-      color: "text-[#d97706]",
-      bg: "bg-[#fffbeb]",
+      color: "text-[#7e22ce]",
+      bg: "bg-[#f3e8ff]",
     },
     {
-      label: "Repeat Rate",
-      value: `${stats.repeatRate}%`,
-      icon: Repeat,
-      color: "text-[#059669]",
-      bg: "bg-[#ecfdf5]",
+      label: "Gold Members",
+      value: stats.goldMembers.toLocaleString(),
+      icon: Star,
+      color: "text-[#d97706]",
+      bg: "bg-[#fffbeb]",
     },
     {
       label: "Avg. LTV",

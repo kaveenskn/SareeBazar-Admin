@@ -14,7 +14,6 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  IndianRupee,
   Banknote,
   Info,
 } from "lucide-react";
@@ -573,11 +572,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                      Shipping Charge (₹)
+                      Shipping Charge (LKR )
                     </label>
                     <div className="relative">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <IndianRupee size={16} className="text-gray-400" />
+                        <Banknote size={16} className="text-gray-400" />
                       </div>
                       <input
                         type="number"
@@ -612,11 +611,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <label className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-2 block">
-                      Shipping Charge (₹)
+                      Shipping Charge (LKR )
                     </label>
                     <div className="relative">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <IndianRupee size={16} className="text-gray-400" />
+                        <Banknote size={16} className="text-gray-400" />
                       </div>
                       <input
                         type="number"
@@ -648,20 +647,20 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Customer orders 1 saree via <strong>Card Payment</strong></span>
-                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cardPayment}</span>
+                      <span className="font-semibold text-gray-900">+ LKR {shopInfo.shippingCosts.cardPayment}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Customer orders 5 sarees via <strong>Card Payment</strong></span>
-                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cardPayment}</span>
+                      <span className="font-semibold text-gray-900">+ LKR {shopInfo.shippingCosts.cardPayment}</span>
                     </div>
                     <hr className="border-gray-200" />
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Customer orders 1 saree via <strong>COD</strong></span>
-                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cashOnDelivery}</span>
+                      <span className="font-semibold text-gray-900">+ LKR {shopInfo.shippingCosts.cashOnDelivery}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Customer orders 5 sarees via <strong>COD</strong></span>
-                      <span className="font-semibold text-gray-900">+ ₹{shopInfo.shippingCosts.cashOnDelivery}</span>
+                      <span className="font-semibold text-gray-900">+ LKR {shopInfo.shippingCosts.cashOnDelivery}</span>
                     </div>
                   </div>
                 </div>
