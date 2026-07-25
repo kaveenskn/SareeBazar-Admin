@@ -10,10 +10,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-magenta: var(--magenta);
-  --font-sans: var(--font-outfit);
-  --font-serif: var(--font-outfit);
+  --font-sans: var(--font-outfit), "Outfit", sans-serif;
+  --font-serif: var(--font-outfit), "Outfit", sans-serif;
   --font-mono: monospace;
-  --default-font-family: var(--font-outfit);
+  --default-font-family: var(--font-outfit), "Outfit", sans-serif;
 }
 
 html, body {
